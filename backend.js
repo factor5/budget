@@ -1,6 +1,7 @@
 /* Data layer: Google Sheets (real) and Demo (in memory, for trying the app). */
 (function () {
   'use strict';
+  const T = (k, v) => (window.I18N ? window.I18N.t(k, v) : k);
 
   const store = {
     get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
@@ -29,7 +30,7 @@
     return new Promise((resolve, reject) => {
       if (document.querySelector('script[src="' + src + '"]')) { resolve(); return; }
       const s = document.createElement('script');
-      s.src = src; s.async = true; s.onload = () => resolve(); s.onerror = () => reject(new Error('Не се зареди ' + src));
+      s.src = src; s.async = true; s.onload = () => resolve(); s.onerror = () => reject(new Error(T('loadFailed', { src })));
       document.head.appendChild(s);
     });
   }
@@ -75,7 +76,7 @@
     // Must be called straight from a tap: Google opens a short sign-in window.
     signIn() {
       if (this.signedIn) return Promise.resolve();
-      if (!this.tokenClient) return Promise.reject(new Error('Google още се зарежда. Опитайте пак след секунда.'));
+      if (!this.tokenClient) return Promise.reject(new Error(T('googleLoading')));
       return new Promise((resolve, reject) => {
         this.tokenClient.callback = (r) => {
           if (r.error) { reject(new Error(r.error_description || r.error)); return; }
@@ -84,7 +85,7 @@
           store.set('g.token', this.token); store.set('g.consented', true);
           resolve();
         };
-        this.tokenClient.error_callback = (e) => reject(new Error(e && e.type === 'popup_closed' ? 'Входът беше прекъснат.' : 'Входът не успя.'));
+        this.tokenClient.error_callback = (e) => reject(new Error(e && e.type === 'popup_closed' ? T('signInCancelled') : T('signInFailed')));
         this.tokenClient.requestAccessToken({ prompt: this.consented ? '' : 'consent' });
       });
     }
@@ -110,7 +111,7 @@
       } catch (e) { throw new Offline(); }
       if (res.status === 401) { this.token = null; store.del('g.token'); throw new NeedsSignIn(); }
       if (!res.ok) {
-        let msg = 'Грешка ' + res.status;
+        let msg = T('errorN', { n: res.status });
         try { const j = await res.json(); if (j.error && j.error.message) msg = j.error.message; } catch (e) { /* no body */ }
         throw new Error(msg);
       }
@@ -149,7 +150,7 @@
       const ids = {};
       meta.sheets.forEach((s) => { ids[s.properties.title] = s.properties.sheetId; });
       const missing = [L.entries, L.income, L.invest, L.balance, L.lists].filter((t) => !(t in ids));
-      if (missing.length) throw new Error('Тази таблица не е в новия формат (липсва: ' + missing.join(', ') + ').');
+      if (missing.length) throw new Error(T('wrongFormat', { missing: missing.join(', ') }));
       this.sheet = { id: file.id, name: meta.properties.title, sheetIds: ids };
       store.set('g.sheet', this.sheet);
       return this.sheet;
@@ -157,13 +158,13 @@
 
     async pickSheet() {
       await this.signIn();
-      const file = await this.pickFile('Изберете таблицата за годината');
+      const file = await this.pickFile(T('pickYear'));
       return this.useFile(file);
     }
 
     async createYear(year) {
       await this.signIn();
-      const tpl = await this.pickFile('Изберете шаблона (budget template)');
+      const tpl = await this.pickFile(T('pickTemplate'));
       const copy = await this.api('POST', 'https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(tpl.id) + '/copy', { name: 'budget ' + year });
       return this.useFile({ id: copy.id, name: copy.name });
     }
@@ -255,7 +256,7 @@
 
   class DemoBackend {
     constructor() {
-      this.demo = true; this.configured = true; this.hasSheet = true; this.signedIn = true; this.sheetName = 'Демо (без връзка с Google)';
+      this.demo = true; this.configured = true; this.hasSheet = true; this.signedIn = true; Object.defineProperty(this, 'sheetName', { get: () => T('demoSheet'), configurable: true });
       const y = new Date().getFullYear(), m = new Date().getMonth() + 1;
       const d = (mm, dd) => y + '-' + String(mm).padStart(2, '0') + '-' + String(dd).padStart(2, '0');
       const prev = m > 1 ? m - 1 : 1;
@@ -276,7 +277,7 @@
     signIn() { return Promise.resolve(); }
     signOut() {}
     pickSheet() { return Promise.resolve({ name: this.sheetName }); }
-    createYear() { return Promise.reject(new Error('В демото няма връзка с Google.')); }
+    createYear() { return Promise.reject(new Error(T('demoNoGoogle'))); }
     wait() { return new Promise((r) => setTimeout(r, 250)); }
     async loadLists() {
       await this.wait();

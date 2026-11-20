@@ -94,6 +94,7 @@ On 1 January: **Настройки → Нова година от шаблона
 - **Signing in again.** Google's sign-in lasts an hour. After that, the next save opens a short Google window that closes by itself. If the "Влез" button shows at the top right, tap it.
 - **Offline.** Entries saved without internet show as waiting (top right and on **Последни**). They are sent automatically when the phone is back online, or when you tap the waiting badge.
 - **Sign-in stops working after 7 days?** Apps in Google's "Testing" mode can ask you to sign in again weekly. To avoid it: **OAuth consent screen → Publish app**. Because the app only asks for access to files you pick, Google doesn't require a review.
+- **Language.** **Настройки → Език** switches the app between Bulgarian and English. Category names stay as they are in the sheet.
 - **Changing the app later.** Edit the files on GitHub; the phone picks up the new version the next time the app opens with internet.
 - **Removing access.** https://myaccount.google.com/permissions → Разходи → **Remove access**.
 

@@ -1,7 +1,7 @@
 // Keeps the app's own files on the phone so it opens without internet.
 // Google sign-in and the Sheets API always go to the network.
-const VERSION = 'razhodi-v3';
-const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'backend.js', 'config.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
+const VERSION = 'razhodi-v4';
+const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'backend.js', 'config.js', 'i18n.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

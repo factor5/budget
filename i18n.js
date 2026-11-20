@@ -1,0 +1,141 @@
+/* Texts in Bulgarian and English. t('key', {n: 3}) fills in {n}. */
+(function () {
+  'use strict';
+  const D = {
+    bg: {
+      appName: 'Разходи',
+      months: ['януари', 'февруари', 'март', 'април', 'май', 'юни', 'юли', 'август', 'септември', 'октомври', 'ноември', 'декември'],
+      monthsShort: ['яну', 'фев', 'мар', 'апр', 'май', 'юни', 'юли', 'авг', 'сеп', 'окт', 'ное', 'дек'],
+      groups: {},
+      // tabs and titles
+      tabAdd: 'Нов', tabRecent: 'Последни', tabMonth: 'Месец', tabSettings: 'Настройки', mainMenu: 'Основно меню',
+      titleExpense: 'Нов разход', titleIncome: 'Нов приход', titleInvest: 'Нова вноска',
+      titleRecent: 'Последни записи', titleEntries: 'Записи', titleSettings: 'Настройки',
+      soFar: '{month} до момента: {sum}',
+      today: 'Днес', yesterday: 'Вчера',
+      // sync badge
+      demo: 'Демо', waiting1: '{n} чака', waitingN: '{n} чакат', sentN: 'Изпратени: {n}', offline: 'Офлайн', signIn: 'Влез',
+      sending: 'Изпращане…', synced: 'Синхронизирано', somethingWrong: 'Нещо се обърка.', noInternet: 'Няма интернет.',
+      // onboarding
+      almostReady: 'Почти готово',
+      notConfigured: 'Приложението още не е свързано с Google. Попълнете файла config.js, както е описано в README (стъпка 3).',
+      tryDemo: 'Пробвайте демото', connectSheet: 'Свържете таблицата',
+      stepSignIn: 'Влезте с Google акаунта си.', stepPick: 'Изберете таблицата за годината, например „budget 2026 (new format)“.',
+      onlyPicked: 'Приложението вижда само файловете, които изберете тук.', signInPick: 'Влез и избери таблица',
+      connected: 'Свързано: {name}',
+      // add
+      chooseCategory: 'Изберете категория', saveBtn: 'Запиши {amount} € · {cat}',
+      saved: 'Записано: {label}', savedLocal: 'Запазено на телефона: {label}. Ще се изпрати при връзка.',
+      allCategories: 'Всички категории', source: 'Източник', investType: 'Тип вноска', type: 'Тип', category: 'Категория',
+      loadingCats: 'Зареждане на категориите…', catsNotLoaded: 'Категориите още не са заредени. Свържете се с интернет веднъж.',
+      entryKind: 'Вид запис', expense: 'Разход', income: 'Приход', invest: 'Вноска', amount: 'Сума', more: 'Още…',
+      details: 'Подробности', date: 'Дата', oneOff: 'Еднократен', car: 'Кола', note: 'Бележка', notePh: 'Бележка (по желание)',
+      keypad: 'Клавиатура', delDigit: 'Изтрий цифра', decimal: 'Запетая',
+      // recent
+      pending1: '{n} запис чака изпращане', pendingN: '{n} записа чакат изпращане', pendingHint: 'Изпращат се сами, щом има връзка.', send: 'Изпрати',
+      month: 'Месец', latest: 'Последни', olderMonth: 'По-стар месец', newerMonth: 'По-нов месец',
+      noMatch: 'Няма записи за този избор.', noEntries: 'Още няма записи.', count1: '{n} запис', countN: '{n} записа',
+      oneOffLower: 'еднократен', waitingConn: 'чака връзка', noNote: 'Без бележка',
+      olderPick: 'По-стари записи: изберете месец',
+      recentHint: 'Докоснете запис, за да го промените или изтриете. Показват се разходите; приходите и вноските са в таблицата.',
+      // edit
+      editEntry: 'Промяна на запис', amountEur: 'Сума (€)', saveChanges: 'Запази промените', cancel: 'Отказ', del: 'Изтрий', sure: 'Сигурни ли сте?',
+      needsInternet: 'Промени и изтриване изискват интернет.', enterAmount: 'Въведете сума.', changed: 'Записът е променен.', deleted: 'Записът е изтрит.',
+      // month
+      prevMonth: 'Предишен месец', nextMonth: 'Следващ месец', toDate: 'до днес', wholeMonth: 'целия месец', loading: 'Зареждане…',
+      monthNeedsNet: 'Нужен е интернет, за да се покаже месецът.', statement: 'Сметка на месеца',
+      incomeL: 'Приходи', spendL: 'Разходи', regular: 'редовни', oneOffs: 'еднократни', left: 'Остават',
+      keptPct: '{p}% от приходите', investedN: 'вложени {sum}', byGroup: 'Разходи по групи', avgMonth: 'средно на месец', avg: 'средно',
+      fromBalance: 'Числата идват от раздел „Баланс“ на таблицата.', tapSignIn: 'Докоснете „Влез“ горе вдясно.',
+      // settings
+      language: 'Език', sheet: 'Таблица', writesTo: 'Записва в „Записи“, „Приходи“ и „Инвестиции“.', noSheet: 'Още няма избрана таблица.',
+      changeSheet: 'Смени таблицата', newYear: 'Нова година от шаблона', created: 'Създадена и свързана: {name}',
+      newYearHint: '„Нова година“ копира шаблона като „budget {year}“ и превключва към копието. Не забравяйте да насочите и таблото към новия файл.',
+      exitDemo: 'Изход от демото', categories: 'Категории', catsFrom: '{n} от раздел „Категории“', refresh: 'Обнови', refreshed: 'Обновено.',
+      quickT: 'Най-ползваните отгоре', quickD: '7-те най-чести категории като бутони',
+      modesT: 'Приходи и вноски', modesD: 'Превключвател „Разход / Приход / Вноска“',
+      security: 'Сигурност и връзка',
+      secGoogle: 'Влизате с Google акаунта си. Приложението вижда само файловете, които изберете, и няма собствен сървър.',
+      secOffline: 'Без интернет записите се пазят на телефона и се изпращат сами по-късно.',
+      signOut: 'Излез от Google', signedOut: 'Излязохте.', install: 'Инсталиране', installBtn: 'Инсталирай на телефона',
+      installHint: 'В Chrome отворете менюто ⋮ и изберете „Инсталиране на приложението“ (или „Добавяне към началния екран“).',
+      dataNote: 'Категориите и групите са както в таблицата.',
+      // backend
+      loadFailed: 'Не се зареди {src}', googleLoading: 'Google още се зарежда. Опитайте пак след секунда.',
+      signInCancelled: 'Входът беше прекъснат.', signInFailed: 'Входът не успя.', errorN: 'Грешка {n}',
+      wrongFormat: 'Тази таблица не е в новия формат (липсва: {missing}).', pickYear: 'Изберете таблицата за годината',
+      pickTemplate: 'Изберете шаблона (budget template)', demoNoGoogle: 'В демото няма връзка с Google.', demoSheet: 'Демо (без връзка с Google)',
+    },
+    en: {
+      appName: 'Expenses',
+      months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+      monthsShort: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+      groups: { 'Храна': 'Food', 'Дом': 'Home', 'Коли': 'Cars', 'Семейство': 'Family', 'Здраве': 'Health', 'Свободно време': 'Leisure', 'Други': 'Other' },
+      tabAdd: 'New', tabRecent: 'Recent', tabMonth: 'Month', tabSettings: 'Settings', mainMenu: 'Main menu',
+      titleExpense: 'New expense', titleIncome: 'New income', titleInvest: 'New deposit',
+      titleRecent: 'Recent entries', titleEntries: 'Entries', titleSettings: 'Settings',
+      soFar: '{month} so far: {sum}',
+      today: 'Today', yesterday: 'Yesterday',
+      demo: 'Demo', waiting1: '{n} waiting', waitingN: '{n} waiting', sentN: 'Sent: {n}', offline: 'Offline', signIn: 'Sign in',
+      sending: 'Sending…', synced: 'Synced', somethingWrong: 'Something went wrong.', noInternet: 'No internet.',
+      almostReady: 'Almost ready',
+      notConfigured: "The app isn't connected to Google yet. Fill in config.js as described in the README (step 3).",
+      tryDemo: 'Try the demo', connectSheet: 'Connect your sheet',
+      stepSignIn: 'Sign in with your Google account.', stepPick: 'Pick the sheet for the year, for example "budget 2026 (new format)".',
+      onlyPicked: 'The app only sees the files you pick here.', signInPick: 'Sign in and pick a sheet',
+      connected: 'Connected: {name}',
+      chooseCategory: 'Choose a category', saveBtn: 'Save {amount} € · {cat}',
+      saved: 'Saved: {label}', savedLocal: "Kept on the phone: {label}. It'll be sent when you're online.",
+      allCategories: 'All categories', source: 'Source', investType: 'Deposit type', type: 'Type', category: 'Category',
+      loadingCats: 'Loading categories…', catsNotLoaded: "Categories aren't loaded yet. Connect to the internet once.",
+      entryKind: 'Entry type', expense: 'Expense', income: 'Income', invest: 'Deposit', amount: 'Amount', more: 'More…',
+      details: 'Details', date: 'Date', oneOff: 'One-off', car: 'Car', note: 'Note', notePh: 'Note (optional)',
+      keypad: 'Keypad', delDigit: 'Delete digit', decimal: 'Decimal point',
+      pending1: '{n} entry waiting to be sent', pendingN: '{n} entries waiting to be sent', pendingHint: "They're sent automatically when you're online.", send: 'Send',
+      month: 'Month', latest: 'Latest', olderMonth: 'Older month', newerMonth: 'Newer month',
+      noMatch: 'No entries for this selection.', noEntries: 'No entries yet.', count1: '{n} entry', countN: '{n} entries',
+      oneOffLower: 'one-off', waitingConn: 'waiting for connection', noNote: 'No note',
+      olderPick: 'Older entries: pick a month',
+      recentHint: 'Tap an entry to change or delete it. Only expenses are shown; income and deposits are in the sheet.',
+      editEntry: 'Edit entry', amountEur: 'Amount (€)', saveChanges: 'Save changes', cancel: 'Cancel', del: 'Delete', sure: 'Are you sure?',
+      needsInternet: 'Editing and deleting need internet.', enterAmount: 'Enter an amount.', changed: 'Entry updated.', deleted: 'Entry deleted.',
+      prevMonth: 'Previous month', nextMonth: 'Next month', toDate: 'to date', wholeMonth: 'whole month', loading: 'Loading…',
+      monthNeedsNet: 'The month needs internet to load.', statement: 'Month summary',
+      incomeL: 'Income', spendL: 'Spending', regular: 'regular', oneOffs: 'one-off', left: 'Left',
+      keptPct: '{p}% of income', investedN: 'invested {sum}', byGroup: 'Spending by group', avgMonth: 'monthly average', avg: 'average',
+      fromBalance: 'The numbers come from the Баланс tab of the sheet.', tapSignIn: 'Tap "Sign in" at the top right.',
+      language: 'Language', sheet: 'Sheet', writesTo: 'Writes to the Записи, Приходи and Инвестиции tabs.', noSheet: 'No sheet chosen yet.',
+      changeSheet: 'Change sheet', newYear: 'New year from template', created: 'Created and connected: {name}',
+      newYearHint: '"New year" copies the template as "budget {year}" and switches to the copy. Remember to point the dashboard to the new file too.',
+      exitDemo: 'Exit demo', categories: 'Categories', catsFrom: '{n} from the Категории tab', refresh: 'Refresh', refreshed: 'Refreshed.',
+      quickT: 'Most used first', quickD: 'Your 7 most frequent categories as buttons',
+      modesT: 'Income and deposits', modesD: 'Show the Expense / Income / Deposit switch',
+      security: 'Security and connection',
+      secGoogle: 'You sign in with your Google account. The app only sees the files you pick and has no server of its own.',
+      secOffline: 'Without internet, entries stay on the phone and are sent automatically later.',
+      signOut: 'Sign out of Google', signedOut: 'Signed out.', install: 'Install', installBtn: 'Install on this phone',
+      installHint: 'In Chrome, open the ⋮ menu and choose "Install app" (or "Add to Home screen").',
+      dataNote: 'Category names stay as they are in your sheet.',
+      loadFailed: "Couldn't load {src}", googleLoading: 'Google is still loading. Try again in a second.',
+      signInCancelled: 'Sign-in was cancelled.', signInFailed: 'Sign-in failed.', errorN: 'Error {n}',
+      wrongFormat: "This sheet isn't in the new format (missing: {missing}).", pickYear: 'Pick the sheet for the year',
+      pickTemplate: 'Pick the template (budget template)', demoNoGoogle: 'The demo has no connection to Google.', demoSheet: 'Demo (not connected to Google)',
+    },
+  };
+  let lang = 'bg';
+  try { const s = localStorage.getItem('lang'); if (s && D[s]) lang = s; } catch (_) {}
+  const t = (key, vars) => {
+    let s = D[lang][key]; if (s == null) s = D.bg[key]; if (s == null) return key;
+    if (vars) s = s.replace(/\{(\w+)\}/g, (m, k) => (vars[k] != null ? vars[k] : m));
+    return s;
+  };
+  window.I18N = {
+    t,
+    get lang() { return lang; },
+    setLang(l) { if (!D[l]) return; lang = l; try { localStorage.setItem('lang', l); } catch (_) {} document.documentElement.lang = l; },
+    months: () => D[lang].months,
+    monthsShort: () => D[lang].monthsShort,
+    group: (g) => D[lang].groups[g] || g,
+  };
+  document.documentElement.lang = lang;
+})();
