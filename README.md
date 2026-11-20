@@ -106,3 +106,11 @@ On 1 January: **Настройки → Нова година от шаблона
 | `backend.js` | reading and writing the Google Sheet (and the demo data) |
 | `config.js` | your three Google values (step 3) |
 | `manifest.webmanifest`, `sw.js`, `icons/` | what makes it installable and work offline |
+| `theme.js`, `i18n.js` | light/dark theme, and the Bulgarian and English texts |
+| `tests/`, `package.json`, `playwright.config.js` | automated tests, for when you change the app (not needed on the phone) |
+
+## Tests
+
+To check everything still works after changing the app, run `npm install` once and then `npm test`.
+The tests use the real app with a fake Google, so they need no account. They also run on GitHub on every push.
+See [tests/README.md](tests/README.md).

@@ -1,0 +1,13 @@
+{
+  "name": "razhodi",
+  "private": true,
+  "description": "Behaviour tests for the Разходи expense app. The app itself has no build step.",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}
