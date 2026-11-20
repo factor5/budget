@@ -139,8 +139,9 @@
       const [lists, entries] = await Promise.all([backend.loadLists(), backend.loadEntries()]);
       S.lists = lists; S.entries = entries; S.monthData = {};
       store.set(K('cache.lists'), lists); store.set(K('cache.entries'), entries);
+      S.monthError = null;
       if (!(opts && opts.quiet)) render();
-      else renderSubtitle();
+      else { renderSubtitle(); if (S.view === 'recent' && !S.editing) renderMain(); }
       await flush();
     } catch (e) { handleError(e); }
   }
@@ -514,14 +515,16 @@
   function viewMonth() {
     const wrap = h('div', { class: 'scroll' });
     const nav = h('div', { class: 'month-nav', style: 'justify-content:space-between' },
-      h('button', { type: 'button', class: 'icon-btn', 'aria-label': t('prevMonth'), disabled: S.month <= 1 || null, onclick: () => { S.month--; render(); } }, svg(ICON.left)),
+      h('button', { type: 'button', class: 'icon-btn', 'aria-label': t('prevMonth'), disabled: S.month <= 1 || null, onclick: () => { S.month--; S.monthError = null; render(); } }, svg(ICON.left)),
       h('span', { class: 'small muted' }, S.month === new Date().getMonth() + 1 ? t('toDate') : t('wholeMonth')),
-      h('button', { type: 'button', class: 'icon-btn', 'aria-label': t('nextMonth'), disabled: S.month >= 12 || null, onclick: () => { S.month++; render(); } }, svg(ICON.right)));
+      h('button', { type: 'button', class: 'icon-btn', 'aria-label': t('nextMonth'), disabled: S.month >= 12 || null, onclick: () => { S.month++; S.monthError = null; render(); } }, svg(ICON.right)));
     wrap.append(nav);
     const d = S.monthData[S.month];
     if (!d) {
       wrap.append(h('div', { class: 'empty' }, S.monthError || (navigator.onLine ? t('loading') : t('monthNeedsNet'))));
-      loadMonth();
+      // After a failure, wait for the person (or reconnecting / signing in) instead of asking Google again at once.
+      if (S.monthError) wrap.append(h('button', { type: 'button', class: 'btn secondary', onclick: () => { S.monthError = null; renderMain(); } }, t('tryAgain')));
+      else loadMonth();
       return wrap;
     }
     // Month statement: income, minus spending (regular / one-off), what's left.
@@ -556,7 +559,7 @@
     if (monthLoading === m || !navigator.onLine || !backend.signedIn) return;
     monthLoading = m; S.monthError = null;
     try { S.monthData[m] = await backend.loadMonth(m); }
-    catch (e) { S.monthError = e.code === 'needs-sign-in' ? t('tapSignIn') : e.code === 'offline' ? t('noInternet') : e.message; }
+    catch (e) { S.monthError = e.code === 'needs-sign-in' ? t('tapSignIn') : e.code === 'offline' ? t('noInternet') : e.message; renderSync(); }
     monthLoading = null;
     if (S.view === 'month' && S.month === m) renderMain();
   }
@@ -636,7 +639,7 @@
     if (S.view === 'month') S.monthError = null;
     closeSheet(); render(); window.scrollTo(0, 0);
   }));
-  window.addEventListener('online', () => { renderSync(); flush(); if (S.view === 'month') renderMain(); });
+  window.addEventListener('online', () => { renderSync(); flush(); S.monthError = null; if (S.view === 'month') renderMain(); });
   window.addEventListener('offline', renderSync);
   window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); S.installEvent = e; if (S.view === 'settings') renderMain(); });
   document.addEventListener('visibilitychange', () => { if (!document.hidden) { renderSync(); refresh({ quiet: true }); } });

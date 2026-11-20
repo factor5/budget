@@ -19,10 +19,7 @@ test('what one phone saves shows on the other when it comes back to the app', as
   await expect(phone.entryRow({ category: 'вода', amount: 33 })).toBeVisible();
 });
 
-// Known issue: coming back to the app reloads the entries but leaves an open Recent list as it was,
-// until you switch tabs. Remove test.fail() once fixed; the test will then guard the fix.
 test('an open Recent list updates when coming back to the app', async ({ phone, newPhone }) => {
-  test.fail();
   await phone.goTo('recent');
   const other = await newPhone();
   await other.addExpense({ amount: 33, category: 'вода' });

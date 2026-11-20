@@ -75,11 +75,26 @@ test('an error from Google is shown in place of the month', async ({ phone, goog
   await expect(phone.screen()).toContainText('Internal error encountered.');
 });
 
-// Known issue: after a failed load the Month screen immediately loads again, and again —
-// hundreds of requests a second while Google keeps failing, which uses up the Sheets API quota.
-// Remove test.fail() once fixed.
+test('after an error the month waits; Try again asks Google once more', async ({ phone, google, budget }) => {
+  budget.setMonth(3, MARCH);
+  google.failAllRequests(500, 'Internal error encountered.');
+  await phone.goTo('month');
+  await expect(phone.screen()).toContainText('Internal error encountered.');
+  google.stopFailing();
+  await phone.screen().getByRole('button', { name: 'Try again' }).click();
+  expect((await phone.monthSummary()).income).toBe(5407);
+});
+
+test('after an error, going to another month tries again', async ({ phone, google, budget }) => {
+  budget.setMonth(2, { income: 5000, spending: 4500 });
+  google.failNextRequest(500, 'Internal error encountered.');
+  await phone.goTo('month');
+  await expect(phone.screen()).toContainText('Internal error encountered.');
+  await phone.previousMonth();
+  expect((await phone.monthSummary()).income).toBe(5000);
+});
+
 test('a lasting Google error does not make the app ask Google over and over', async ({ phone, google }) => {
-  test.fail();
   google.failAllRequests(500, 'Internal error encountered.');
   const before = google.apiCalls().length;
   await phone.goTo('month');
