@@ -65,9 +65,6 @@ test('a one-off expense is marked in the sheet', async ({ phone, budget }) => {
 
 ## Known issues
 
-Tests marked `test.fail()` describe app behaviour that is wrong today. They pass while the problem
-is there. Once it's fixed they start failing: then remove the `test.fail()` line and they guard the fix.
-
-- `month.spec.js`: a lasting Google error makes the Month screen reload in a tight loop.
-- `sign-in.spec.js`: when access ends, the Month screen says to tap "Sign in" but the badge still says "Synced".
-- `multiple-phones.spec.js`: coming back to the app doesn't redraw an open Recent list.
+When a test finds app behaviour that is wrong but can't be fixed right away, mark it with `test.fail()`
+and a comment saying what's wrong. It passes while the problem is there; once the app is fixed it fails,
+which is the reminder to remove `test.fail()` so it guards the fix. There are none at the moment.

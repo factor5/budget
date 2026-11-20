@@ -50,7 +50,6 @@ test('the Month screen asks to sign in when access has ended, and loads after si
   google.revokeAllTokens();
   await phone.goTo('month');
   await expect(phone.screen()).toContainText('Tap "Sign in" at the top right.');
-  await phone.comeBackToApp(); // the badge catches up
   await expect(phone.statusBadge()).toHaveText('Sign in');
   await phone.tapStatus();
   await phone.waitUntilSynced();
@@ -58,10 +57,7 @@ test('the Month screen asks to sign in when access has ended, and loads after si
   expect((await phone.monthSummary()).income).toBe(100);
 });
 
-// Known issue: the Month screen says to tap "Sign in", but the badge keeps saying "Synced"
-// until something else refreshes it. Remove test.fail() once fixed.
 test('when the Month screen asks to sign in, the badge offers it straight away', async ({ phone, google }) => {
-  test.fail();
   google.revokeAllTokens();
   await phone.goTo('month');
   await expect(phone.screen()).toContainText('Tap "Sign in" at the top right.');

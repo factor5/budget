@@ -43,7 +43,7 @@
       needsInternet: 'Промени и изтриване изискват интернет.', enterAmount: 'Въведете сума.', changed: 'Записът е променен.', deleted: 'Записът е изтрит.',
       // month
       prevMonth: 'Предишен месец', nextMonth: 'Следващ месец', toDate: 'до днес', wholeMonth: 'целия месец', loading: 'Зареждане…',
-      monthNeedsNet: 'Нужен е интернет, за да се покаже месецът.', statement: 'Сметка на месеца',
+      monthNeedsNet: 'Нужен е интернет, за да се покаже месецът.', tryAgain: 'Опитай пак', statement: 'Сметка на месеца',
       incomeL: 'Приходи', spendL: 'Разходи', regular: 'редовни', oneOffs: 'еднократни', left: 'Остават',
       keptPct: '{p}% от приходите', investedN: 'вложени {sum}', byGroup: 'Разходи по групи', avgMonth: 'средно на месец', avg: 'средно',
       fromBalance: 'Числата идват от раздел „Баланс“ на таблицата.', tapSignIn: 'Докоснете „Влез“ горе вдясно.',
@@ -101,7 +101,7 @@
       editEntry: 'Edit entry', amountEur: 'Amount (€)', saveChanges: 'Save changes', cancel: 'Cancel', del: 'Delete', sure: 'Are you sure?',
       needsInternet: 'Editing and deleting need internet.', enterAmount: 'Enter an amount.', changed: 'Entry updated.', deleted: 'Entry deleted.',
       prevMonth: 'Previous month', nextMonth: 'Next month', toDate: 'to date', wholeMonth: 'whole month', loading: 'Loading…',
-      monthNeedsNet: 'The month needs internet to load.', statement: 'Month summary',
+      monthNeedsNet: 'The month needs internet to load.', tryAgain: 'Try again', statement: 'Month summary',
       incomeL: 'Income', spendL: 'Spending', regular: 'regular', oneOffs: 'one-off', left: 'Left',
       keptPct: '{p}% of income', investedN: 'invested {sum}', byGroup: 'Spending by group', avgMonth: 'monthly average', avg: 'average',
       fromBalance: 'The numbers come from the Баланс tab of the sheet.', tapSignIn: 'Tap "Sign in" at the top right.',
