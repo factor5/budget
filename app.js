@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   const { GoogleBackend, DemoBackend, store } = window.Backend;
-  const I = window.I18N; const t = I.t;
+  const I = window.I18N; const t = I.t; const Theme = window.Theme;
 
   /* ---------- helpers ---------- */
   const $ = (sel) => document.querySelector(sel);
@@ -78,10 +78,8 @@
   };
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
-  const TONE = {
-    'Храна': ['#FDECD8', '#7A3B05'], 'Дом': ['#E2ECFB', '#1D4E9E'], 'Коли': ['#E3F1EC', '#0B4D3E'], 'Семейство': ['#EFE7FB', '#5B2E9E'],
-    'Здраве': ['#FBE3E8', '#8E1F3A'], 'Свободно време': ['#FFF4C7', '#6B5200'], 'Други': ['#ECEDF0', '#3D4552'],
-  };
+  const TONE_KEY = { 'Храна': 'food', 'Дом': 'home', 'Коли': 'cars', 'Семейство': 'family', 'Здраве': 'health', 'Свободно време': 'leisure', 'Други': 'other' };
+  const TONE = new Proxy({}, { get: (_, g) => { const k = TONE_KEY[g]; return k ? ['var(--t-' + k + '-bg)', 'var(--t-' + k + ')'] : undefined; } });
 
   /* ---------- state ---------- */
   const params = new URLSearchParams(location.search);
@@ -542,7 +540,7 @@
     const groups = d.groups.slice().sort((a, b) => b.amount - a.amount);
     wrap.append(h('section', { class: 'card' },
       h('div', { style: 'display:flex;justify-content:space-between;align-items:baseline' }, h('h2', { text: t('byGroup') }),
-        h('span', { class: 'tiny muted', style: 'display:flex;align-items:center;gap:6px' }, h('span', { 'aria-hidden': 'true', style: 'width:2px;height:12px;background:#14181F' }), t('avgMonth'))),
+        h('span', { class: 'tiny muted', style: 'display:flex;align-items:center;gap:6px' }, h('span', { 'aria-hidden': 'true', style: 'width:2px;height:12px;background:var(--ink)' }), t('avgMonth'))),
       groups.map((g) => h('div', { class: 'bar-row' },
         h('div', { class: 'bar-top' }, h('span', { style: 'font-weight:500' }, I.group(g.name)),
           h('span', null, h('b', { style: 'font-weight:600' }, money0(g.amount)), h('span', { class: 'muted' }, ' / ' + money0(g.avg)))),
@@ -571,6 +569,10 @@
 
     const langBtn = (l, label) => h('button', { type: 'button', 'aria-pressed': String(I.lang === l), lang: l,
       onclick: () => { if (I.lang !== l) { I.setLang(l); render(); } } }, label);
+    const themeBtn = (v, label) => h('button', { type: 'button', 'aria-pressed': String(Theme.get() === v), onclick: () => { Theme.set(v); renderMain(); } }, label);
+    wrap.append(h('section', { class: 'card' }, h('span', { class: 'label', text: t('theme') }),
+      h('div', { class: 'seg', role: 'group', 'aria-label': t('theme') }, themeBtn('auto', t('themeAuto')), themeBtn('light', t('themeLight')), themeBtn('dark', t('themeDark'))),
+      h('p', { class: 'tiny muted', style: 'margin:0' }, t('themeHint'))));
     wrap.append(h('section', { class: 'card' }, h('span', { class: 'label', text: t('language') }),
       h('div', { class: 'seg', role: 'group', 'aria-label': t('language') }, langBtn('bg', 'Български'), langBtn('en', 'English')),
       h('p', { class: 'tiny muted', style: 'margin:0' }, t('dataNote'))));
@@ -606,8 +608,8 @@
       toggle('modes', t('modesT'), t('modesD'))));
 
     wrap.append(h('section', { class: 'card' }, h('span', { class: 'label', text: t('security') }),
-      h('div', { class: 'row', style: 'flex-wrap:nowrap;align-items:flex-start' }, svg(ICON.lock, 18), h('span', { class: 'small', style: 'color:#3D4552' }, t('secGoogle'))),
-      h('div', { class: 'row', style: 'flex-wrap:nowrap;align-items:flex-start' }, svg(ICON.refresh, 18), h('span', { class: 'small', style: 'color:#3D4552' }, t('secOffline'))),
+      h('div', { class: 'row', style: 'flex-wrap:nowrap;align-items:flex-start' }, svg(ICON.lock, 18), h('span', { class: 'small', style: 'color:var(--ink-2)' }, t('secGoogle'))),
+      h('div', { class: 'row', style: 'flex-wrap:nowrap;align-items:flex-start' }, svg(ICON.refresh, 18), h('span', { class: 'small', style: 'color:var(--ink-2)' }, t('secOffline'))),
       !demo && backend.hasSheet ? h('button', { type: 'button', class: 'btn danger', onclick: () => { backend.signOut(); S.entries = []; S.lists = null; store.del(K('cache.entries')); store.del(K('cache.lists')); render(); toast(t('signedOut')); } }, t('signOut')) : null));
 
     const standalone = window.matchMedia('(display-mode: standalone)').matches;
@@ -615,7 +617,7 @@
       wrap.append(h('section', { class: 'card' }, h('span', { class: 'label', text: t('install') }),
         S.installEvent
           ? h('button', { type: 'button', class: 'btn', onclick: async () => { S.installEvent.prompt(); await S.installEvent.userChoice; S.installEvent = null; renderMain(); } }, t('installBtn'))
-          : h('p', { class: 'small', style: 'margin:0;color:#3D4552' }, t('installHint'))));
+          : h('p', { class: 'small', style: 'margin:0;color:var(--ink-2)' }, t('installHint'))));
     }
     return wrap;
   }

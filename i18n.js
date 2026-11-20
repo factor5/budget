@@ -48,7 +48,7 @@
       keptPct: '{p}% от приходите', investedN: 'вложени {sum}', byGroup: 'Разходи по групи', avgMonth: 'средно на месец', avg: 'средно',
       fromBalance: 'Числата идват от раздел „Баланс“ на таблицата.', tapSignIn: 'Докоснете „Влез“ горе вдясно.',
       // settings
-      language: 'Език', sheet: 'Таблица', writesTo: 'Записва в „Записи“, „Приходи“ и „Инвестиции“.', noSheet: 'Още няма избрана таблица.',
+      language: 'Език', theme: 'Тема', themeAuto: 'Автоматично', themeLight: 'Светла', themeDark: 'Тъмна', themeHint: '„Автоматично“ следва настройката на телефона.', sheet: 'Таблица', writesTo: 'Записва в „Записи“, „Приходи“ и „Инвестиции“.', noSheet: 'Още няма избрана таблица.',
       changeSheet: 'Смени таблицата', newYear: 'Нова година от шаблона', created: 'Създадена и свързана: {name}',
       newYearHint: '„Нова година“ копира шаблона като „budget {year}“ и превключва към копието. Не забравяйте да насочите и таблото към новия файл.',
       exitDemo: 'Изход от демото', categories: 'Категории', catsFrom: '{n} от раздел „Категории“', refresh: 'Обнови', refreshed: 'Обновено.',
@@ -105,7 +105,7 @@
       incomeL: 'Income', spendL: 'Spending', regular: 'regular', oneOffs: 'one-off', left: 'Left',
       keptPct: '{p}% of income', investedN: 'invested {sum}', byGroup: 'Spending by group', avgMonth: 'monthly average', avg: 'average',
       fromBalance: 'The numbers come from the Баланс tab of the sheet.', tapSignIn: 'Tap "Sign in" at the top right.',
-      language: 'Language', sheet: 'Sheet', writesTo: 'Writes to the Записи, Приходи and Инвестиции tabs.', noSheet: 'No sheet chosen yet.',
+      language: 'Language', theme: 'Theme', themeAuto: 'Automatic', themeLight: 'Light', themeDark: 'Dark', themeHint: '"Automatic" follows your phone\'s setting.', sheet: 'Sheet', writesTo: 'Writes to the Записи, Приходи and Инвестиции tabs.', noSheet: 'No sheet chosen yet.',
       changeSheet: 'Change sheet', newYear: 'New year from template', created: 'Created and connected: {name}',
       newYearHint: '"New year" copies the template as "budget {year}" and switches to the copy. Remember to point the dashboard to the new file too.',
       exitDemo: 'Exit demo', categories: 'Categories', catsFrom: '{n} from the Категории tab', refresh: 'Refresh', refreshed: 'Refreshed.',
