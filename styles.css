@@ -217,3 +217,15 @@ select.input { appearance: auto; }
 .filters select.input { height: 40px; padding: 0 8px; font-size: 14px; }
 .summary { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 14px; border-radius: 12px; background: var(--accent-soft); color: var(--accent-dark); font-size: 14px; }
 .summary b { font-size: 16px; font-weight: 700; }
+
+.statement { gap: 8px; }
+.st-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 15px; }
+.st-row > span:last-child { font-variant-numeric: tabular-nums; font-weight: 600; }
+.st-row.sub { font-size: 13px; color: var(--muted); padding-left: 14px; margin-top: -2px; }
+.st-row.sub > span:last-child { font-weight: 500; }
+.st-row .pos { color: var(--accent); }
+.st-row .neg { color: #B42318; }
+.st-row .warn { color: var(--warn); }
+.st-rule { border-top: 1px solid var(--line); margin: 2px 0; }
+.st-row.total { font-weight: 600; }
+.st-row.total > span:last-child { font-size: 26px; font-weight: 700; letter-spacing: -.5px; }

@@ -510,16 +510,22 @@
       loadMonth();
       return wrap;
     }
-    const stat = (cls, label, v) => h('div', { class: 'stat ' + cls }, h('span', { class: 'tiny' }, label), h('span', { class: 'v' }, money0(v)));
-    wrap.append(h('section', { class: 'card' },
-      h('div', { style: 'display:flex;flex-direction:column;gap:2px' }, h('span', { class: 'small muted' }, 'Похарчени'), h('span', { class: 'stat-big' }, money0(d.spend))),
-      h('div', { class: 'stats' },
-        stat('', 'Регулярни', d.regular), stat('warn', 'Еднократни', d.oneOff),
-        stat('', 'Приходи', d.income), stat(d.left < 0 ? 'bad' : 'good', 'Остават', d.left))));
+    // Month statement: income, minus spending (regular / one-off), what's left.
+    const line = (label, v, cls, extra) => h('div', { class: 'st-row' + (extra ? ' ' + extra : '') }, h('span', null, label), h('span', { class: cls || '' }, v));
+    const keptPct = d.income > 0 ? Math.round(d.left / d.income * 100) : null;
+    const foot = [keptPct != null ? keptPct + '% от приходите' : '', d.invested ? 'вложени ' + money0(d.invested) : ''].filter(Boolean).join(' · ');
+    wrap.append(h('section', { class: 'card statement', 'aria-label': 'Сметка на месеца' },
+      line('Приходи', '+' + money0(d.income), 'pos'),
+      line('Разходи', '−' + money0(d.spend).replace('−', ''), 'neg'),
+      line('редовни', money0(d.regular), '', 'sub'),
+      line('еднократни', money0(d.oneOff), d.oneOff ? 'warn' : '', 'sub'),
+      h('div', { class: 'st-rule' }),
+      h('div', { class: 'st-row total' }, h('span', null, 'Остават'), h('span', { class: d.left < 0 ? 'neg' : 'pos' }, money0(d.left))),
+      foot ? h('div', { class: 'small muted' }, foot) : null));
     const max = Math.max(1, ...d.groups.map((g) => Math.max(g.amount, g.avg)));
     const groups = d.groups.slice().sort((a, b) => b.amount - a.amount);
     wrap.append(h('section', { class: 'card' },
-      h('div', { style: 'display:flex;justify-content:space-between;align-items:baseline' }, h('h2', { text: 'По групи' }),
+      h('div', { style: 'display:flex;justify-content:space-between;align-items:baseline' }, h('h2', { text: 'Разходи по групи' }),
         h('span', { class: 'tiny muted', style: 'display:flex;align-items:center;gap:6px' }, h('span', { 'aria-hidden': 'true', style: 'width:2px;height:12px;background:#14181F' }), 'средно на месец')),
       groups.map((g) => h('div', { class: 'bar-row' },
         h('div', { class: 'bar-top' }, h('span', { style: 'font-weight:500' }, g.name),
@@ -527,7 +533,6 @@
         h('div', { class: 'bar', role: 'img', 'aria-label': g.name + ': ' + money0(g.amount) + ', средно ' + money0(g.avg) },
           h('div', { class: 'fill' + (g.amount > g.avg ? ' over' : ''), style: 'width:' + Math.max(g.amount > 0 ? 1.5 : 0, g.amount / max * 100).toFixed(1) + '%' }),
           h('div', { class: 'mark', style: 'left:' + Math.min(99.5, g.avg / max * 100).toFixed(1) + '%' }))))));
-    if (d.invested) wrap.append(h('p', { class: 'small muted', style: 'margin:0 4px' }, 'Вложено в инвестиции този месец: ' + money0(d.invested)));
     wrap.append(h('p', { class: 'tiny muted', style: 'margin:0 4px' }, 'Числата идват от раздел „Баланс“ на таблицата.'));
     return wrap;
   }
