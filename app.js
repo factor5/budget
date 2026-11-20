@@ -68,7 +68,10 @@
   const shortDay = (iso) => { const [, m, d] = iso.split('-').map(Number); return (iso === todayIso() ? 'Днес, ' : '') + d + ' ' + MONTHS_SHORT[m - 1]; };
   const parseAmount = (s) => Number(String(s).replace(/\s/g, '').replace(',', '.')) || 0;
   // Desktop browsers open the calendar only from the small icon; open it on any click.
-  const openPicker = (el) => { try { if (el.showPicker) el.showPicker(); } catch (_) {} };
+  const openPicker = (el) => {
+    try { if (el.showPicker) { el.showPicker(); return; } } catch (_) {}
+    el.focus(); el.click();
+  };
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
   const TONE = {
@@ -351,8 +354,12 @@
         more ? h('button', { type: 'button', class: 'chip more', onclick: openCategorySheet }, 'Още…') : null)));
 
     const details = h('section', { class: 'block', style: 'padding-top:12px', 'aria-label': 'Подробности' });
-    const dateInput = h('input', { type: 'date', value: S.date, max: todayIso(), 'aria-label': 'Дата', onchange: (e) => { S.date = e.target.value || todayIso(); renderMain(); }, onclick: (e) => openPicker(e.target) });
-    const row = h('div', { class: 'row' }, h('label', { class: 'pill' }, svg(ICON.cal), shortDay(S.date), dateInput));
+    const dateInput = h('input', { type: 'date', value: S.date, max: todayIso(), tabindex: '-1', 'aria-hidden': 'true', onchange: (e) => { S.date = e.target.value || todayIso(); renderMain(); } });
+    const datePill = h('div', { class: 'pill', role: 'button', tabindex: '0', 'aria-label': 'Дата: ' + shortDay(S.date),
+      onclick: () => openPicker(dateInput),
+      onkeydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); openPicker(dateInput); } } },
+      svg(ICON.cal), shortDay(S.date), dateInput);
+    const row = h('div', { class: 'row' }, datePill);
     if (S.mode === 'expense') {
       row.append(h('button', { type: 'button', class: 'pill oneoff', 'aria-pressed': String(S.oneOff), onclick: () => { S.oneOff = !S.oneOff; renderMain(); } }, svg(ICON.spark), 'Еднократен'));
     }

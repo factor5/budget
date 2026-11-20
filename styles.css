@@ -108,7 +108,8 @@ main { flex: 1; display: flex; flex-direction: column; }
 }
 .pill svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .pill[aria-pressed="true"].oneoff { border-color: #B45309; background: var(--warn-soft); color: var(--warn); font-weight: 600; }
-.pill input[type="date"] { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; border: 0; }
+.pill[role="button"] { cursor: pointer; user-select: none; }
+.pill input[type="date"] { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; border: 0; pointer-events: none; }
 .carpill { height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); font-size: 14px; }
 .carpill[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-dark); font-weight: 600; }
 

@@ -1,6 +1,6 @@
 // Keeps the app's own files on the phone so it opens without internet.
 // Google sign-in and the Sheets API always go to the network.
-const VERSION = 'razhodi-v2';
+const VERSION = 'razhodi-v3';
 const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'backend.js', 'config.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
 
 self.addEventListener('install', (e) => {
@@ -16,7 +16,7 @@ self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET' || url.origin !== self.location.origin) return;
   // Network first, so updates show up; fall back to the saved copy offline.
   e.respondWith(
-    fetch(e.request)
+    fetch(e.request, { cache: 'no-cache' })
       .then((res) => {
         const copy = res.clone();
         caches.open(VERSION).then((c) => c.put(e.request, copy));
