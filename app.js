@@ -67,6 +67,8 @@
   };
   const shortDay = (iso) => { const [, m, d] = iso.split('-').map(Number); return (iso === todayIso() ? 'Днес, ' : '') + d + ' ' + MONTHS_SHORT[m - 1]; };
   const parseAmount = (s) => Number(String(s).replace(/\s/g, '').replace(',', '.')) || 0;
+  // Desktop browsers open the calendar only from the small icon; open it on any click.
+  const openPicker = (el) => { try { if (el.showPicker) el.showPicker(); } catch (_) {} };
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
   const TONE = {
@@ -349,7 +351,7 @@
         more ? h('button', { type: 'button', class: 'chip more', onclick: openCategorySheet }, 'Още…') : null)));
 
     const details = h('section', { class: 'block', style: 'padding-top:12px', 'aria-label': 'Подробности' });
-    const dateInput = h('input', { type: 'date', value: S.date, max: todayIso(), 'aria-label': 'Дата', onchange: (e) => { S.date = e.target.value || todayIso(); renderMain(); } });
+    const dateInput = h('input', { type: 'date', value: S.date, max: todayIso(), 'aria-label': 'Дата', onchange: (e) => { S.date = e.target.value || todayIso(); renderMain(); }, onclick: (e) => openPicker(e.target) });
     const row = h('div', { class: 'row' }, h('label', { class: 'pill' }, svg(ICON.cal), shortDay(S.date), dateInput));
     if (S.mode === 'expense') {
       row.append(h('button', { type: 'button', class: 'pill oneoff', 'aria-pressed': String(S.oneOff), onclick: () => { S.oneOff = !S.oneOff; renderMain(); } }, svg(ICON.spark), 'Еднократен'));
@@ -418,7 +420,7 @@
       h('h2', { text: 'Промяна на запис' }),
       h('div', { class: 'grid2' },
         h('label', { class: 'field' }, 'Сума (€)', h('input', { class: 'input', type: 'text', inputmode: 'decimal', value: Number(e.amount).toFixed(2).replace('.', ','), oninput: (ev) => { e.amount = parseAmount(ev.target.value); } })),
-        h('label', { class: 'field' }, 'Дата', h('input', { class: 'input', type: 'date', value: e.date, onchange: (ev) => { e.date = ev.target.value || e.date; } }))),
+        h('label', { class: 'field' }, 'Дата', h('input', { class: 'input', type: 'date', value: e.date, onchange: (ev) => { e.date = ev.target.value || e.date; }, onclick: (ev) => openPicker(ev.target) }))),
       h('label', { class: 'field' }, 'Категория', catSel),
     ];
     if (isCarCat(e.cat)) {
