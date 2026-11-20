@@ -220,26 +220,54 @@
       return this.api('PUT', this.sheetsUrl('/values/' + encodeURIComponent(range) + '?valueInputOption=RAW'), { range, values: [values] });
     }
 
-    async append(kind, e) {
-      if (kind === 'expense') {
-        const r = await this.nextRow(L.entries);
-        await this.write(L.entries + '!A' + r + ':F' + r, [isoToSerial(e.date), e.amount, e.cat, e.car || '', !!e.oneOff, e.note || '']);
-        return r;
-      }
-      const tab = kind === 'income' ? L.income : L.invest;
+    // Adds a row by inserting fresh cells at the first empty row, in one atomic request.
+    // If two phones save at the same moment, each insert gets its own row: nothing is overwritten.
+    async insertRow(tab, values) {
+      const sheetId = this.sheet.sheetIds[tab];
       const r = await this.nextRow(tab);
-      await this.write(tab + '!A' + r + ':D' + r, [isoToSerial(e.date), e.amount, e.cat, e.note || '']);
+      const idx = r - 1, cols = values.length;
+      const cell = (v) => ({ userEnteredValue: typeof v === 'number' ? { numberValue: v } : typeof v === 'boolean' ? { boolValue: v } : { stringValue: String(v) } });
+      const span = (row) => ({ sheetId, startRowIndex: row, endRowIndex: row + 1, startColumnIndex: 0, endColumnIndex: cols });
+      await this.api('POST', this.sheetsUrl(':batchUpdate'), {
+        requests: [
+          { insertRange: { range: span(idx), shiftDimension: 'ROWS' } },
+          // Same date format, checkbox and dropdowns as the row below.
+          { copyPaste: { source: span(idx + 1), destination: span(idx), pasteType: 'PASTE_FORMAT' } },
+          { updateCells: { start: { sheetId, rowIndex: idx, columnIndex: 0 }, rows: [{ values: values.map(cell) }], fields: 'userEnteredValue' } },
+        ],
+      });
       return r;
     }
 
-    async update(row, e) {
-      await this.write(L.entries + '!A' + row + ':F' + row, [isoToSerial(e.date), e.amount, e.cat, e.car || '', !!e.oneOff, e.note || '']);
+    async append(kind, e) {
+      if (kind === 'expense') return this.insertRow(L.entries, [isoToSerial(e.date), e.amount, e.cat, e.car || '', !!e.oneOff, e.note || '']);
+      return this.insertRow(kind === 'income' ? L.income : L.invest, [isoToSerial(e.date), e.amount, e.cat, e.note || '']);
     }
 
-    async remove(row) {
+    // Before changing or deleting, make sure the row still holds this entry:
+    // someone else may have added or deleted rows since this phone last loaded.
+    async locate(orig) {
+      const same = (x) => x.date === orig.date && Math.abs(x.amount - orig.amount) < 0.005 && x.cat === orig.cat && (x.car || '') === (orig.car || '') && (x.note || '') === (orig.note || '') && !!x.oneOff === !!orig.oneOff;
+      const all = await this.loadEntries();
+      const atRow = all.find((x) => x.row === orig.row);
+      if (atRow && same(atRow)) return orig.row;
+      const matches = all.filter(same);
+      if (matches.length) return matches.reduce((a, b) => (Math.abs(b.row - orig.row) < Math.abs(a.row - orig.row) ? b : a)).row;
+      const err = new Error(T('entryMoved')); err.code = 'moved'; throw err;
+    }
+
+    async update(row, e, orig) {
+      const r = orig ? await this.locate(orig) : row;
+      await this.write(L.entries + '!A' + r + ':F' + r, [isoToSerial(e.date), e.amount, e.cat, e.car || '', !!e.oneOff, e.note || '']);
+      return r;
+    }
+
+    async remove(row, orig) {
+      const r = orig ? await this.locate(orig) : row;
       await this.api('POST', this.sheetsUrl(':batchUpdate'), {
-        requests: [{ deleteDimension: { range: { sheetId: this.sheet.sheetIds[L.entries], dimension: 'ROWS', startIndex: row - 1, endIndex: row } } }],
+        requests: [{ deleteDimension: { range: { sheetId: this.sheet.sheetIds[L.entries], dimension: 'ROWS', startIndex: r - 1, endIndex: r } } }],
       });
+      return r;
     }
   }
 

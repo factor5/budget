@@ -65,6 +65,7 @@
       signInCancelled: 'Входът беше прекъснат.', signInFailed: 'Входът не успя.', errorN: 'Грешка {n}',
       wrongFormat: 'Тази таблица не е в новия формат (липсва: {missing}).', pickYear: 'Изберете таблицата за годината',
       pickTemplate: 'Изберете шаблона (budget template)', demoNoGoogle: 'В демото няма връзка с Google.', demoSheet: 'Демо (без връзка с Google)',
+      entryMoved: 'Записът е променен от друго устройство. Списъкът е обновен – опитайте пак.',
     },
     en: {
       appName: 'Expenses',
@@ -120,6 +121,7 @@
       signInCancelled: 'Sign-in was cancelled.', signInFailed: 'Sign-in failed.', errorN: 'Error {n}',
       wrongFormat: "This sheet isn't in the new format (missing: {missing}).", pickYear: 'Pick the sheet for the year',
       pickTemplate: 'Pick the template (budget template)', demoNoGoogle: 'The demo has no connection to Google.', demoSheet: 'Demo (not connected to Google)',
+      entryMoved: 'This entry was changed on another device. The list has been refreshed; try again.',
     },
   };
   let lang = 'bg';

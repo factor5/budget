@@ -163,10 +163,20 @@
     } catch (e) { handleError(e, true); }
     flushing = false;
     store.set(K('cache.entries'), S.entries);
+    if (sent) reloadEntries();
     S.monthData = {};
     renderSync(); renderSubtitle();
     if (S.view === 'recent' || S.view === 'month') renderMain();
     return sent;
+  }
+
+  // Re-read the entries so row numbers match the sheet (others may have added or deleted rows).
+  async function reloadEntries() {
+    if (demo || !backend.signedIn || !navigator.onLine) return;
+    try {
+      S.entries = await backend.loadEntries(); store.set(K('cache.entries'), S.entries);
+      renderSubtitle(); if (S.view === 'recent' && !S.editing) renderMain();
+    } catch (_) { /* next refresh will catch up */ }
   }
 
   function handleError(e, quiet) {
@@ -449,7 +459,7 @@
   }
 
   function openEdit(e) {
-    S.editing = Object.assign({}, e); S.confirmDelete = false;
+    S.editing = Object.assign({}, e); S.editingOrig = Object.assign({}, e); S.confirmDelete = false;
     renderEdit();
   }
   function renderEdit() {
@@ -484,22 +494,22 @@
     if (!(e.amount > 0)) { toast(t('enterAmount')); return; }
     if (!demo && !(await ensureSignedIn())) return;
     try {
-      await backend.update(e.row, { date: e.date, amount: e.amount, cat: e.cat, car: e.car, oneOff: e.oneOff, note: e.note });
+      await backend.update(e.row, { date: e.date, amount: e.amount, cat: e.cat, car: e.car, oneOff: e.oneOff, note: e.note }, S.editingOrig);
       const i = S.entries.findIndex((x) => x.row === e.row); if (i >= 0) S.entries[i] = Object.assign({}, e);
       store.set(K('cache.entries'), S.entries); S.monthData = {};
-      closeSheet(); toast(t('changed')); render();
-    } catch (err) { toast(err.code === 'offline' ? t('noInternet') : err.message, 4000); }
+      closeSheet(); toast(t('changed')); render(); reloadEntries();
+    } catch (err) { toast(err.code === 'offline' ? t('noInternet') : err.message, 4000); if (err.code === 'moved') { closeSheet(); reloadEntries(); } }
   }
   async function deleteEdit() {
     if (!S.confirmDelete) { S.confirmDelete = true; renderEdit(); return; }
     if (!demo && !(await ensureSignedIn())) return;
     const row = S.editing.row;
     try {
-      await backend.remove(row);
+      await backend.remove(row, S.editingOrig);
       S.entries = S.entries.filter((x) => x.row !== row).map((x) => (x.row > row ? Object.assign({}, x, { row: x.row - 1 }) : x));
       store.set(K('cache.entries'), S.entries); S.monthData = {};
-      closeSheet(); toast(t('deleted')); render();
-    } catch (err) { toast(err.code === 'offline' ? t('noInternet') : err.message, 4000); }
+      closeSheet(); toast(t('deleted')); render(); reloadEntries();
+    } catch (err) { toast(err.code === 'offline' ? t('noInternet') : err.message, 4000); if (err.code === 'moved') { closeSheet(); reloadEntries(); } }
   }
 
   /* ----- Месец ----- */
@@ -615,7 +625,7 @@
     const sh = $('#sheet');
     sh.replaceChildren(...children); sh.hidden = false; $('#sheet-backdrop').hidden = false;
   }
-  function closeSheet() { $('#sheet').hidden = true; $('#sheet-backdrop').hidden = true; S.editing = null; S.confirmDelete = false; }
+  function closeSheet() { $('#sheet').hidden = true; $('#sheet-backdrop').hidden = true; S.editing = null; S.editingOrig = null; S.confirmDelete = false; }
   $('#sheet-backdrop').addEventListener('click', closeSheet);
 
   /* ---------- wiring ---------- */
