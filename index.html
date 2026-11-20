@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="bg">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#116A55">
+  <title>Разходи</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app" class="app">
+    <header class="top">
+      <div class="top-text">
+        <h1 id="title">Нов разход</h1>
+        <span id="subtitle" class="muted small"></span>
+      </div>
+      <button id="sync" type="button" class="sync" aria-live="polite"></button>
+    </header>
+
+    <main id="main"></main>
+
+    <div id="toast" class="toast" role="status" hidden></div>
+    <div id="sheet-backdrop" class="backdrop" hidden></div>
+    <div id="sheet" class="sheet" role="dialog" aria-modal="true" hidden></div>
+
+    <nav class="tabs" aria-label="Основно меню">
+      <button type="button" data-view="add" class="tab"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Нов</button>
+      <button type="button" data-view="recent" class="tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Последни</button>
+      <button type="button" data-view="month" class="tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Месец</button>
+      <button type="button" data-view="settings" class="tab"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Настройки</button>
+    </nav>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="backend.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
