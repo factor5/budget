@@ -181,7 +181,7 @@
   }
   function renderSubtitle() {
     const m = new Date().getMonth() + 1;
-    const titles = { add: S.mode === 'income' ? 'Нов приход' : S.mode === 'invest' ? 'Нова вноска' : 'Нов разход', recent: 'Последни записи', month: '', settings: 'Настройки' };
+    const titles = { add: S.mode === 'income' ? 'Нов приход' : S.mode === 'invest' ? 'Нова вноска' : 'Нов разход', recent: (S.recentMonth || S.recentCat) ? 'Записи' : 'Последни записи', month: '', settings: 'Настройки' };
     $('#title').textContent = S.view === 'month' ? cap(MONTHS[S.month - 1]) + ' ' + new Date().getFullYear() : titles[S.view];
     const sub = $('#subtitle');
     if ((S.view === 'add' || S.view === 'recent') && backend.hasSheet) sub.textContent = cap(MONTHS[m - 1]) + ' до момента: ' + money0(monthSpent(m));
@@ -392,9 +392,36 @@
           h('div', { class: 'd' }, 'Изпращат се сами, щом има връзка.')),
         navigator.onLine ? h('button', { type: 'button', class: 'btn secondary', style: 'width:auto;padding:0 12px', onclick: async () => { if (await ensureSignedIn()) flush(); } }, 'Изпрати') : null));
     }
-    const items = pending.map((q) => Object.assign({ pending: true }, q.entry))
-      .concat(S.entries.slice().sort((a, b) => (b.date === a.date ? b.row - a.row : b.date < a.date ? -1 : 1)).slice(0, 80));
-    if (!items.length) { wrap.append(h('div', { class: 'empty' }, 'Още няма записи.')); return wrap; }
+    // Filters: month (0 = latest entries) and category ('' = all).
+    const all = pending.map((q) => Object.assign({ pending: true }, q.entry))
+      .concat(S.entries.slice().sort((a, b) => (b.date === a.date ? b.row - a.row : b.date < a.date ? -1 : 1)));
+    const year = (S.entries[0] && Number(S.entries[0].date.slice(0, 4))) || new Date().getFullYear();
+    const lastMonth = year < new Date().getFullYear() ? 12 : new Date().getMonth() + 1;
+    const rm = S.recentMonth || 0, rc = S.recentCat || '';
+    const setMonth = (m) => { S.recentMonth = m; render(); };
+    const monthSel = h('select', { class: 'input', 'aria-label': 'Месец', onchange: (ev) => setMonth(Number(ev.target.value)) },
+      h('option', { value: '0', selected: rm === 0 ? 'selected' : null }, 'Последни'),
+      Array.from({ length: lastMonth }, (_, i) => lastMonth - i).map((m) => h('option', { value: String(m), selected: rm === m ? 'selected' : null }, cap(MONTHS[m - 1]) + ' ' + year)));
+    const usedCats = [...new Set(all.map((e) => e.cat).filter(Boolean))];
+    const ordered = S.lists.cats.map((c) => c.name).filter((n) => usedCats.includes(n)).concat(usedCats.filter((n) => !S.lists.cats.some((c) => c.name === n)));
+    const catSel = h('select', { class: 'input', 'aria-label': 'Категория', onchange: (ev) => { S.recentCat = ev.target.value; render(); } },
+      h('option', { value: '', selected: rc === '' ? 'selected' : null }, 'Всички категории'),
+      ordered.map((n) => h('option', { value: n, selected: rc === n ? 'selected' : null }, n)));
+    wrap.append(h('div', { class: 'filters' },
+      h('div', { class: 'month-nav' },
+        h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'По-стар месец', disabled: rm === 1 || null, onclick: () => setMonth(rm === 0 ? lastMonth : rm - 1) }, svg(ICON.left)),
+        monthSel,
+        h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'По-нов месец', disabled: rm === 0 || null, onclick: () => setMonth(rm >= lastMonth ? 0 : rm + 1) }, svg(ICON.right))),
+      catSel));
+    const pref = rm ? year + '-' + String(rm).padStart(2, '0') : '';
+    let items = all.filter((e) => (!pref || e.date.startsWith(pref)) && (!rc || e.cat === rc));
+    const limited = !rm && !rc && items.length > 80;
+    if (limited) items = items.slice(0, 80);
+    if (!items.length) { wrap.append(h('div', { class: 'empty' }, all.length ? 'Няма записи за този избор.' : 'Още няма записи.')); return wrap; }
+    if (rm || rc) {
+      const sum = items.reduce((s, e) => s + e.amount, 0);
+      wrap.append(h('div', { class: 'summary' }, h('span', null, items.length + (items.length === 1 ? ' запис' : ' записа')), h('b', null, money(sum))));
+    }
     const byDay = [];
     items.forEach((e) => { const last = byDay[byDay.length - 1]; if (last && last.date === e.date) last.items.push(e); else byDay.push({ date: e.date, items: [e] }); });
     byDay.forEach((d) => {
@@ -410,6 +437,7 @@
             h('span', { class: 'amt' }, money(e.amount))));
         }))));
     });
+    if (limited) wrap.append(h('button', { type: 'button', class: 'btn secondary', onclick: () => setMonth(lastMonth) }, 'По-стари записи: изберете месец'));
     wrap.append(h('p', { class: 'tiny muted', style: 'margin:2px 4px 0' }, 'Докоснете запис, за да го промените или изтриете. Показват се разходите; приходите и вноските са в таблицата.'));
     return wrap;
   }

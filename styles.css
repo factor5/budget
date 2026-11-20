@@ -211,3 +211,9 @@ select.input { appearance: auto; }
   .amount { min-height: 90px; padding-top: 16px; }
   .key { height: 56px; }
 }
+
+.filters { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.filters .month-nav select { flex: 1; min-width: 0; text-align: center; }
+.filters select.input { height: 40px; padding: 0 8px; font-size: 14px; }
+.summary { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 14px; border-radius: 12px; background: var(--accent-soft); color: var(--accent-dark); font-size: 14px; }
+.summary b { font-size: 16px; font-weight: 700; }
