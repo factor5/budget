@@ -122,6 +122,8 @@
   // it never replaces a message that still has its button.
   let toastTimer = null, toastMs = 0, toastAction = null;
   const toastEl = () => $('#toast');
+  // On New the message sits above the pinned Save button, never over it.
+  function placeToast() { toastEl().classList.toggle('above-save', !!$('#save')); }
   function hideToast() { clearTimeout(toastTimer); toastEl().hidden = true; toastAction = null; }
   function startToastTimer() { clearTimeout(toastTimer); toastTimer = setTimeout(hideToast, toastMs); }
   function toast(msg, ms, opts) {
@@ -137,7 +139,7 @@
         toastAction.run();
       } }, toastAction.label));
     }
-    el.replaceChildren(...kids); el.hidden = false;
+    el.replaceChildren(...kids); el.hidden = false; placeToast();
     startToastTimer();
   }
   // Keep the message up while a finger or the keyboard is on it.
@@ -268,6 +270,7 @@
     if (!demo && (!backend.configured || !backend.hasSheet) && S.view !== 'settings') { main.replaceChildren(onboarding()); return; }
     const v = { add: viewAdd, recent: viewRecent, month: viewMonth, settings: viewSettings }[S.view];
     main.replaceChildren(v());
+    placeToast();
   }
 
   function onboarding() {
@@ -466,7 +469,7 @@
       keys.map((k) => h('button', { type: 'button', class: 'key', 'aria-label': k === 'del' ? t('delDigit') : k === ',' ? t('decimal') : k, onclick: () => pressKey(k) }, k === 'del' ? '⌫' : k === ',' ? dec() : k))));
     const btn = h('button', { id: 'save', type: 'button', class: 'btn', onclick: save }, saveLabel());
     kids.push(h('div', { class: 'save-wrap' }, btn));
-    const wrap = h('div', null, kids);
+    const wrap = h('div', { class: 'add' }, kids);
     setTimeout(updateSaveBtn, 0);
     return wrap;
   }
