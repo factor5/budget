@@ -36,6 +36,9 @@
   }
 
   /* ---------------- Google ---------------- */
+  // Same date, amount, category, car, one-off and note: the same entry as far as anyone can tell.
+  const sameEntry = (x, o) => x.date === o.date && Math.abs(x.amount - o.amount) < 0.005 && x.cat === o.cat && (x.car || '') === (o.car || '') && (x.note || '') === (o.note || '') && !!x.oneOff === !!o.oneOff;
+
   class GoogleBackend {
     constructor(cfg) {
       this.cfg = cfg || {};
@@ -179,6 +182,17 @@
       };
     }
 
+    // Income and deposits: Дата, Сума, Източник/Тип, Бележка.
+    async loadOther(kind) {
+      const [rows] = await this.getRanges([(kind === 'income' ? L.income : L.invest) + '!A2:D']);
+      const out = [];
+      rows.forEach((r, i) => {
+        if (r[0] === '' || r[0] == null || r[1] === '' || r[1] == null) return;
+        out.push({ row: i + 2, date: typeof r[0] === 'number' ? serialToIso(r[0]) : String(r[0]), amount: Number(r[1]) || 0, cat: String(r[2] || ''), note: String(r[3] || '') });
+      });
+      return out;
+    }
+
     async loadEntries() {
       const [rows] = await this.getRanges([L.entries + '!A2:F']);
       const out = [];
@@ -246,9 +260,9 @@
 
     // Before changing or deleting, make sure the row still holds this entry:
     // someone else may have added or deleted rows since this phone last loaded.
-    async locate(orig) {
-      const same = (x) => x.date === orig.date && Math.abs(x.amount - orig.amount) < 0.005 && x.cat === orig.cat && (x.car || '') === (orig.car || '') && (x.note || '') === (orig.note || '') && !!x.oneOff === !!orig.oneOff;
-      const all = await this.loadEntries();
+    async locate(orig, kind) {
+      const all = !kind || kind === 'expense' ? await this.loadEntries() : await this.loadOther(kind);
+      const same = (x) => sameEntry(x, orig);
       const atRow = all.find((x) => x.row === orig.row);
       if (atRow && same(atRow)) return orig.row;
       const matches = all.filter(same);
@@ -262,10 +276,12 @@
       return r;
     }
 
-    async remove(row, orig) {
-      const r = orig ? await this.locate(orig) : row;
+    // kind: 'expense' (default), 'income' or 'invest'; picks the tab.
+    async remove(row, orig, kind) {
+      const r = orig ? await this.locate(orig, kind) : row;
+      const tab = !kind || kind === 'expense' ? L.entries : kind === 'income' ? L.income : L.invest;
       await this.api('POST', this.sheetsUrl(':batchUpdate'), {
-        requests: [{ deleteDimension: { range: { sheetId: this.sheet.sheetIds[L.entries], dimension: 'ROWS', startIndex: r - 1, endIndex: r } } }],
+        requests: [{ deleteDimension: { range: { sheetId: this.sheet.sheetIds[tab], dimension: 'ROWS', startIndex: r - 1, endIndex: r } } }],
       });
       return r;
     }
@@ -340,9 +356,21 @@
       return 0;
     }
     async update(row, e) { await this.wait(); if (!navigator.onLine) throw new Offline(); const i = this.entries.findIndex((x) => x.row === row); if (i >= 0) this.entries[i] = Object.assign({ row }, e); }
-    async remove(row) {
+    async remove(row, orig, kind) {
       await this.wait(); if (!navigator.onLine) throw new Offline();
+      if (kind && kind !== 'expense') {
+        const list = kind === 'income' ? this.income : this.invest;
+        const i = list.findIndex((x) => sameEntry(x, orig));
+        if (i < 0) { const err = new Error(T('entryMoved')); err.code = 'moved'; throw err; }
+        list.splice(i, 1); return 0;
+      }
+      if (orig && !this.entries.some((x) => x.row === row && sameEntry(x, orig))) {
+        const m = this.entries.find((x) => sameEntry(x, orig));
+        if (!m) { const err = new Error(T('entryMoved')); err.code = 'moved'; throw err; }
+        row = m.row;
+      }
       this.entries = this.entries.filter((x) => x.row !== row).map((x) => (x.row > row ? Object.assign({}, x, { row: x.row - 1 }) : x));
+      return row;
     }
   }
 

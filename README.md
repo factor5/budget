@@ -100,7 +100,7 @@ On 1 January: **Настройки → Нова година от шаблона
 
 ## Ideas and progress
 
-Planned features and what's already done are in [ROADMAP.md](ROADMAP.md).
+Planned features and what's already done are in [ROADMAP.md](ROADMAP.md). Agreed designs for features are in [docs/specs](docs/specs).
 
 ## Files
 

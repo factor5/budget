@@ -117,13 +117,38 @@
   const isCarCat = (cat) => groupOf(cat) === 'Коли';
 
   /* ---------- toast ---------- */
-  let toastTimer = null;
-  function toast(msg, ms) {
-    const el = $('#toast');
-    el.textContent = msg; el.hidden = false;
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { el.hidden = true; }, ms || 2600);
+  // One message at a time. A message can carry an action button (Undo after saving).
+  // opts.background: a message nobody tapped for (e.g. an automatic refresh failing);
+  // it never replaces a message that still has its button.
+  let toastTimer = null, toastMs = 0, toastAction = null;
+  const toastEl = () => $('#toast');
+  function hideToast() { clearTimeout(toastTimer); toastEl().hidden = true; toastAction = null; }
+  function startToastTimer() { clearTimeout(toastTimer); toastTimer = setTimeout(hideToast, toastMs); }
+  function toast(msg, ms, opts) {
+    const el = toastEl();
+    if (opts && opts.background && toastAction && !el.hidden) return;
+    toastMs = ms || 2600; toastAction = (opts && opts.action) || null;
+    const kids = [h('span', { class: 'toast-msg' }, msg)];
+    if (toastAction) {
+      kids.push(h('button', { type: 'button', class: 'toast-btn', onclick: () => {
+        if (!toastAction || toastAction.busy) return;
+        toastAction.busy = true; clearTimeout(toastTimer);
+        const b = el.querySelector('.toast-btn'); if (b) { b.textContent = toastAction.busyLabel; b.disabled = true; }
+        toastAction.run();
+      } }, toastAction.label));
+    }
+    el.replaceChildren(...kids); el.hidden = false;
+    startToastTimer();
   }
+  // Keep the message up while a finger or the keyboard is on it.
+  (() => {
+    const el = toastEl();
+    const pause = () => { if (!el.hidden) clearTimeout(toastTimer); };
+    const resume = () => { if (!el.hidden && !(toastAction && toastAction.busy) && !el.contains(document.activeElement)) startToastTimer(); };
+    el.addEventListener('pointerdown', pause); el.addEventListener('focusin', pause);
+    el.addEventListener('pointerup', resume); el.addEventListener('pointercancel', resume);
+    el.addEventListener('focusout', () => setTimeout(resume, 0));
+  })();
 
   /* ---------- sync with the sheet ---------- */
   async function ensureSignedIn() {
@@ -146,16 +171,23 @@
     } catch (e) { handleError(e); }
   }
 
-  let flushing = false;
-  async function flush() {
-    if (flushing || !S.queue.length) { renderSync(); return; }
-    if (!navigator.onLine || !backend.signedIn) { renderSync(); return; }
+  let flushing = false, flushRun = null;
+  // Where each sent entry went, by queue id, so Undo can find the row (this session only).
+  const sentRows = {};
+  function flush() {
+    if (flushRun) return flushRun; // already sending: it sends whatever is queued, including new entries
+    if (!S.queue.length || !navigator.onLine || !backend.signedIn) { renderSync(); return Promise.resolve(); }
+    flushRun = sendQueue().finally(() => { flushRun = null; });
+    return flushRun;
+  }
+  async function sendQueue() {
     flushing = true; renderSync();
     let sent = 0;
     try {
       while (S.queue.length) {
         const op = S.queue[0];
         const row = await backend.append(op.kind, op.entry);
+        sentRows[op.id] = row;
         if (op.kind === 'expense') S.entries.push(Object.assign({ row }, op.entry));
         S.queue.shift(); saveQueue(); sent++;
       }
@@ -180,7 +212,7 @@
 
   function handleError(e, quiet) {
     if (e && (e.code === 'offline' || e.code === 'needs-sign-in')) { renderSync(); return; }
-    if (!quiet || !(e && e.code)) toast((e && e.message) || t('somethingWrong'), 4000);
+    if (!quiet || !(e && e.code)) toast((e && e.message) || t('somethingWrong'), 4000, { background: true });
     renderSync();
   }
 
@@ -325,14 +357,56 @@
       if (entry.car) store.set(K('lastCar'), entry.car);
     }
     const label = money(amount) + ' · ' + S.cat;
-    S.queue.push({ id: uid(), kind: S.mode, entry }); saveQueue();
+    const op = { id: uid(), kind: S.mode, entry };
+    S.queue.push(op); saveQueue();
     S.amount = '0'; S.note = ''; S.oneOff = false; S.date = todayIso(); S.cat = null;
     S.busy = true; renderMain(); renderSubtitle();
-    const before = S.queue.length;
     await flush();
     S.busy = false; updateSaveBtn();
-    if (S.queue.length < before) toast(t('saved', { label }));
-    else toast(t('savedLocal', { label }), 3500);
+    const waiting = S.queue.some((q) => q.id === op.id);
+    const action = { label: t('undo'), busyLabel: t('undoing'), run: () => undoSave(op, label) };
+    toast(t(waiting ? 'savedLocal' : 'saved', { label }), UNDO_MS, { action });
+  }
+
+  /* ----- Undo after saving ----- */
+  const UNDO_MS = 6000;
+  const formEmpty = () => parseAmount(S.amount) <= 0 && !S.cat;
+  // Runs straight from the Undo tap, so the Google sign-in window may open.
+  async function undoSave(op, label) {
+    const inQueue = () => S.queue.some((q) => q.id === op.id);
+    try {
+      if (!(inQueue() && !flushRun)) {
+        // Written, or being written right now: sign in first (needs the tap), then let the send finish.
+        if (!demo && !(await ensureSignedIn())) throw new Error('sign-in');
+        if (flushRun) await flushRun;
+      }
+      if (inQueue()) {
+        S.queue = S.queue.filter((q) => q.id !== op.id); saveQueue();
+      } else {
+        const row = sentRows[op.id];
+        const r = await backend.remove(row, Object.assign({ row }, op.entry), op.kind);
+        if (op.kind === 'expense') {
+          const at = typeof r === 'number' && r > 0 ? r : row;
+          S.entries = S.entries.filter((x) => x.row !== at).map((x) => (x.row > at ? Object.assign({}, x, { row: x.row - 1 }) : x));
+          store.set(K('cache.entries'), S.entries);
+          reloadEntries();
+        }
+      }
+    } catch (e) {
+      toast(t(op.kind === 'expense' ? 'undoFailedExpense' : op.kind === 'income' ? 'undoFailedIncome' : 'undoFailedInvest'), UNDO_MS);
+      renderSync();
+      return;
+    }
+    delete sentRows[op.id];
+    S.monthData = {};
+    if (formEmpty()) {
+      const e = op.entry;
+      S.mode = op.kind; S.amount = String(e.amount).replace('.', ','); S.cat = e.cat; S.date = e.date; S.note = e.note || '';
+      S.oneOff = !!e.oneOff; if (e.car) S.car = e.car;
+    }
+    toast(t('undone', { label }));
+    renderSync(); renderSubtitle();
+    if (S.view !== 'settings' && !S.editing) renderMain();
   }
 
   function openCategorySheet() {

@@ -6,7 +6,6 @@ Ideas for the app, and what's already done. To add an idea, put it under **Ideas
 
 ### Faster entry
 
-- [ ] **Undo after saving.** The "Записано" message gets an "Отмени" button for a few seconds; tapping it removes the row that was just written. Small, useful every day.
 - [ ] **Repeat an entry.** Long-press an entry in Последни to add it again with today's date (fuel, the usual groceries).
 - [ ] **Monthly bills checklist.** Mark some categories as monthly (ток, вода, интернет, телефон, абонаменти), for example with a new column in Категории. In a new month the app shows "Bills not entered yet" and pre-fills last month's amount, so you only adjust and save.
 - [ ] **Home-screen shortcuts.** Long-press the app icon on Android to open "Гориво", "Храна" or "Приход" with the category already chosen (`shortcuts` in the manifest plus a URL parameter).
@@ -41,3 +40,4 @@ Ideas for the app, and what's already done. To add an idea, put it under **Ideas
 | 2026-11-20 | **Dark mode** (Настройки → Тема: automatic, light, dark). |
 | 2026-11-20 | **Behaviour tests** for every feature (`npm test`, also on every push), with a fake Google so no account is needed. |
 | 2026-11-20 | **Fixes found by the tests:** Месец no longer retries in a tight loop after a Google error (shows "Try again"), the badge switches to "Sign in" when access has ended, and coming back to the app redraws an open Последни list. |
+| 2026-11-24 | **Undo after saving.** The message after each save has an "Отмени" button for about 6 seconds: it removes the entry (expense, income or deposit, also while it's still waiting offline) and puts it back into the form to fix. Spec: [docs/specs/undo-after-saving.md](docs/specs/undo-after-saving.md). |
