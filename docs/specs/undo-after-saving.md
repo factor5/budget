@@ -20,6 +20,9 @@ Today the only fixes are opening the entry in Последни (expenses only) o
   something you do, such as the next save, does.
 - Undo only ever applies to the **latest save**. A new save replaces the previous Undo.
 - The message is visible on every tab, and Undo works from any of them.
+- **Placement.** On Нов, the **Запиши** button is pinned just above the tabs on every phone height, and the message
+  shows right above it, so it never covers Запиши. On a short screen the keypad scrolls under the pinned button.
+  On the other tabs the message sits just above the tabs as before.
 
 ### What Undo does
 
@@ -67,7 +70,7 @@ which isn't worth it for a rare case.
 | `backend.js` | Find and delete rows on Приходи and Инвестиции as well as Записи (Google and demo). |
 | `app.js` | The message can carry an Undo button, with the rules above. Saving remembers the latest entry and the row it went to. |
 | `i18n.js` | Bulgarian and English texts. |
-| `styles.css` | The button inside the message, in light and dark theme. |
+| `styles.css` | The button inside the message, in light and dark theme. Запиши pinned above the tabs, the message above it. |
 | `tests/undo.spec.js` | New behaviour tests (below). |
 | `ROADMAP.md` | Move the item to **Done** with the date. |
 
@@ -83,4 +86,5 @@ which isn't worth it for a rare case.
 - No connection when tapping Undo: the entry stays, and the right message shows for each kind.
 - A double tap deletes only one row.
 - The message shows Undo for about 6 seconds, then disappears.
+- The message never covers Запиши, which stays just above the tabs, on a short and a tall screen.
 - Undo works in the demo.

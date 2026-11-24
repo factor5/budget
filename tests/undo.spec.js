@@ -191,6 +191,23 @@ test.describe('the message', () => {
     await expect(phone.toast()).toBeHidden({ timeout: 7000 });
   });
 
+  for (const height of [700, 915]) {
+    test(`never covers the Save button, which stays above the tabs (screen ${height}px high)`, async ({ phone }) => {
+      await phone.page.setViewportSize({ width: 412, height });
+      await phone.addExpense({ amount: 12, category: 'храна' });
+      const toast = await phone.toast().boundingBox();
+      const save = await phone.saveButton().boundingBox();
+      const tabs = await phone.page.getByRole('navigation').boundingBox();
+      expect(toast.y + toast.height).toBeLessThanOrEqual(save.y);
+      expect(save.y + save.height).toBeLessThanOrEqual(tabs.y);
+      expect(tabs.y - (save.y + save.height)).toBeLessThan(20);
+      await phone.typeAmount(5); // the keypad still works while the message shows
+      await expect(phone.saveButton()).toHaveText('Choose a category');
+      await phone.chooseCategory('вода');
+      await expect(phone.saveButton()).toBeEnabled();
+    });
+  }
+
   test('an automatic refresh failing does not hide Undo', async ({ phone, google }) => {
     await phone.addExpense({ amount: 12, category: 'храна' });
     google.failNextRequest(500, 'Internal error from Google');
