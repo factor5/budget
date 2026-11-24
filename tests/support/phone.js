@@ -104,6 +104,8 @@ class Phone {
 
   async fillEntry({ kind, amount, choice, car, oneOff, note, date }) {
     await this.goTo('new');
+    // Wait for the form: until the categories have loaded there is no Entry type to choose.
+    await expect(this.screen().getByRole('region', { name: 'Keypad' })).toBeVisible();
     if (kind) await this.chooseKind(kind);
     if (amount != null) await this.typeAmount(amount);
     if (choice) await this.chooseCategory(choice);
@@ -194,6 +196,32 @@ class Phone {
     await this.saveButton().click();
     await expect(this.toast()).toHaveText(/^(Saved: |Kept on the phone: )/);
     return (await this.toast().textContent()).startsWith('Saved') ? 'saved' : 'kept';
+  }
+
+  /* ---------- Undo after saving ---------- */
+
+  /** The Undo button on the message shown after saving. */
+  undoButton() { return this.toast().getByRole('button', { name: /^(Undo|Undoing…)$/ }); }
+
+  /** Taps Undo and returns the message shown afterwards ("Undone: …" or "Couldn't undo. …"). */
+  async undo() {
+    await this.undoButton().click();
+    await expect(this.toast()).toHaveText(/^(Undone: |Couldn't undo)/);
+    return (await this.toast().textContent()).trim();
+  }
+
+  /** What the New form holds: kind, amount, chosen category, note, one-off. */
+  async form() {
+    const pressed = async (loc) => { for (const b of await loc.all()) if ((await b.getAttribute('aria-pressed')) === 'true') return (await b.textContent()).trim(); return null; };
+    const kinds = this.screen().getByRole('group', { name: 'Entry type' });
+    const oneOff = this.screen().getByRole('button', { name: 'One-off' });
+    return {
+      kind: (await kinds.count()) ? await pressed(kinds.getByRole('button')) : null,
+      amount: await this.shownAmount(),
+      category: await pressed(this.categoryButtons().getByRole('button')),
+      note: await this.screen().getByRole('textbox', { name: 'Note' }).inputValue(),
+      oneOff: (await oneOff.count()) ? (await oneOff.getAttribute('aria-pressed')) === 'true' : null,
+    };
   }
 
   /* ---------- Recent ---------- */
