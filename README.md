@@ -98,6 +98,10 @@ On 1 January: **Настройки → Нова година от шаблона
 - **Changing the app later.** Edit the files on GitHub; the phone picks up the new version the next time the app opens with internet.
 - **Removing access.** https://myaccount.google.com/permissions → Разходи → **Remove access**.
 
+## Ideas and progress
+
+Planned features and what's already done are in [ROADMAP.md](ROADMAP.md).
+
 ## Files
 
 | File | What it is |
