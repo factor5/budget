@@ -9,7 +9,6 @@ Ideas for the app, and what's already done. To add an idea, put it under **Ideas
 - [ ] **Repeat an entry.** Long-press an entry in Последни to add it again with today's date (fuel, the usual groceries).
 - [ ] **Monthly bills checklist.** Mark some categories as monthly (ток, вода, интернет, телефон, абонаменти), for example with a new column in Категории. In a new month the app shows "Bills not entered yet" and pre-fills last month's amount, so you only adjust and save.
 - [ ] **Home-screen shortcuts.** Long-press the app icon on Android to open "Гориво", "Храна" or "Приход" with the category already chosen (`shortcuts` in the manifest plus a URL parameter).
-- [ ] **Voice entry.** Say "гориво 54 тойота" and the app fills in amount, category and car. Uses the browser's speech recognition; no extra service, but it can mishear.
 
 ### Seeing where the money goes
 
@@ -25,6 +24,7 @@ Ideas for the app, and what's already done. To add an idea, put it under **Ideas
 ### Considered, not planned
 
 - **Daily reminder notifications.** Reliable notifications on Android need a server to send them, and the app deliberately has none. The bills checklist and home-screen shortcuts cover most of the need.
+- **Voice entry.** The browser's speech recognition sends the audio to Google (Android) or Apple (iPhone, only with Siri turned on), so it doesn't work offline. It can also mishear amounts. With quick categories and the keypad, an entry takes 3–5 taps, and voice wouldn't be faster once you check and fix what it heard.
 - **Reading amounts from receipt photos.** Needs an outside text-recognition service and makes mistakes.
 
 ## Done
