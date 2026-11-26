@@ -99,7 +99,7 @@
     lists: store.get(K('cache.lists'), null),
     entries: store.get(K('cache.entries'), []),
     queue: store.get(K('queue'), []),
-    settings: Object.assign({ quick: true, modes: true }, store.get(K('settings'), {})),
+    settings: Object.assign({ quick: true, modes: true, haptics: true }, store.get(K('settings'), {})),
     month: new Date().getMonth() + 1,
     monthData: {},
     monthError: null,
@@ -685,7 +685,8 @@
         h('span', { class: 'mid' }, h('span', { class: 't' }, t('categories')), h('span', { class: 'tiny muted' }, t('catsFrom', { n: S.lists ? S.lists.cats.length : 0 }))),
         h('button', { type: 'button', class: 'btn secondary', style: 'width:auto;height:36px;padding:0 12px', onclick: async () => { if (demo || (await ensureSignedIn())) { await refresh(); toast(t('refreshed')); } } }, t('refresh'))),
       toggle('quick', t('quickT'), t('quickD')),
-      toggle('modes', t('modesT'), t('modesD'))));
+      toggle('modes', t('modesT'), t('modesD')),
+      haptics.supported ? toggle('haptics', t('hapticsT'), t('hapticsD')) : null));
 
     wrap.append(h('section', { class: 'card' }, h('span', { class: 'label', text: t('security') }),
       h('div', { class: 'row', style: 'flex-wrap:nowrap;align-items:flex-start' }, svg(ICON.lock, 18), h('span', { class: 'small', style: 'color:var(--ink-2)' }, t('secGoogle'))),
@@ -720,6 +721,32 @@
   window.addEventListener('offline', renderSync);
   window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); S.installEvent = e; if (S.view === 'settings') renderMain(); });
   document.addEventListener('visibilitychange', () => { if (!document.hidden) { renderSync(); refresh({ quiet: true }); } });
+  /* ---------- tap feedback (a short vibration on every button) ---------- */
+  // Android: the Vibration API. iPhone (iOS 18+) has no Vibration API, but Safari gives a light
+  // tick when a switch-style checkbox is toggled, so a hidden one is clicked instead.
+  const haptics = (() => {
+    const vibrate = typeof navigator.vibrate === 'function';
+    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const touch = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+    function iosTick() {
+      const label = document.createElement('label'); label.setAttribute('aria-hidden', 'true'); label.style.display = 'none';
+      const input = document.createElement('input'); input.type = 'checkbox'; input.setAttribute('switch', '');
+      label.appendChild(input); document.head.appendChild(label);
+      try { label.click(); } finally { label.remove(); }
+    }
+    return {
+      supported: touch && (vibrate || ios),
+      tap() {
+        if (!S.settings.haptics) return;
+        try { if (vibrate) navigator.vibrate(10); else if (ios) iosTick(); } catch (_) {}
+      },
+    };
+  })();
+  const TAPPABLE = 'button, [role="button"], a.btn, input[type="checkbox"], input[type="radio"]';
+  document.addEventListener('click', (e) => {
+    const el = e.target instanceof Element && e.target.closest(TAPPABLE);
+    if (el && !el.disabled && !el.closest('head')) haptics.tap();
+  }, true);
   document.addEventListener('keydown', (e) => {
     if (S.view !== 'add' || !$('#sheet').hidden) return;
     const tag = (document.activeElement && document.activeElement.tagName) || '';
