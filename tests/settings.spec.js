@@ -60,6 +60,29 @@ test.describe('language', () => {
   });
 });
 
+test.describe('vibrate on tap', () => {
+  const countVibrations = (phone) => phone.page.evaluate(() => window.__buzzes || 0);
+  test.beforeEach(async ({ context }) => {
+    await context.addInitScript(() => { navigator.vibrate = () => { window.__buzzes = (window.__buzzes || 0) + 1; return true; }; });
+  });
+
+  test('pressing buttons gives a short buzz, and it can be turned off', async ({ phone }) => {
+    await phone.goTo('new');
+    const before = await countVibrations(phone);
+    await phone.pressKeys('1', '2');
+    expect(await countVibrations(phone)).toBe(before + 2);
+    await phone.setSetting('Vibrate on tap', false);
+    await phone.goTo('new');
+    const off = await countVibrations(phone);
+    await phone.pressKeys('3');
+    expect(await countVibrations(phone)).toBe(off);
+    await phone.reload();
+    await phone.goTo('new');
+    await phone.pressKeys('4');
+    expect(await countVibrations(phone)).toBe(0);
+  });
+});
+
 test.describe('theme', () => {
   test('follows the phone’s dark mode by default', async ({ phone }) => {
     await phone.setPhoneDarkMode(false);

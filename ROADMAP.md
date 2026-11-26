@@ -41,3 +41,4 @@ Ideas for the app, and what's already done. To add an idea, put it under **Ideas
 | 2026-11-20 | **Behaviour tests** for every feature (`npm test`, also on every push), with a fake Google so no account is needed. |
 | 2026-11-20 | **Fixes found by the tests:** Месец no longer retries in a tight loop after a Google error (shows "Try again"), the badge switches to "Sign in" when access has ended, and coming back to the app redraws an open Последни list. |
 | 2026-11-24 | **Undo after saving.** The message after each save has an "Отмени" button for about 6 seconds: it removes the entry (expense, income or deposit, also while it's still waiting offline) and puts it back into the form to fix. Spec: [docs/specs/undo-after-saving.md](docs/specs/undo-after-saving.md). |
+| 2026-11-26 | **Vibrate on tap:** a short buzz on every button (Android; iPhone with iOS 18 or later gets a light tick). Can be turned off in Настройки. |
