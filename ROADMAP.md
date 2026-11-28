@@ -16,7 +16,6 @@ Ideas for the app, and what's already done. To add an idea, put it under **Ideas
 - [ ] **Monthly limits per group.** A limit per group (for example Храна 400 €) in a new column in Категории. Месец shows "320 of 400 €", and saving warns when an entry pushes a group over its limit.
 - [ ] **Year view.** A tab with a bar per month, the year's average, and the same month last year. Last year comes from that year's file, picked once.
 - [ ] **Cost per car.** ML vs Тойота this year: fuel, repairs, insurance, and cost per month. The car is already saved with every car expense.
-- [ ] **Search.** Find entries by note text ("гуми", "врати") across the whole year.
 
 ### Using it together
 
@@ -42,3 +41,4 @@ Ideas for the app, and what's already done. To add an idea, put it under **Ideas
 | 2026-11-20 | **Fixes found by the tests:** Месец no longer retries in a tight loop after a Google error (shows "Try again"), the badge switches to "Sign in" when access has ended, and coming back to the app redraws an open Последни list. |
 | 2026-11-24 | **Undo after saving.** The message after each save has an "Отмени" button for about 6 seconds: it removes the entry (expense, income or deposit, also while it's still waiting offline) and puts it back into the form to fix. Spec: [docs/specs/undo-after-saving.md](docs/specs/undo-after-saving.md). |
 | 2026-11-26 | **Vibrate on tap:** a short buzz on every button (Android; iPhone with iOS 18 or later gets a light tick). Can be turned off in Настройки. |
+| 2026-11-28 | **Search** on Последни: find expenses by note or car across the whole year, live as you type, with count and total; month and category narrow it. Month and category filters now share one row. Spec: [docs/specs/search.md](docs/specs/search.md). |

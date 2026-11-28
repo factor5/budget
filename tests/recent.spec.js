@@ -44,8 +44,8 @@ test.describe('browsing', () => {
 
   test('one month at a time, with the count and total', async ({ phone }) => {
     await phone.goTo('recent');
-    expect(await phone.recentMonthChoices()).toEqual(['Latest', 'March 2026', 'February 2026', 'January 2026']);
-    await phone.filterRecent({ month: 'February 2026' });
+    expect(await phone.recentMonthChoices()).toEqual(['Latest', 'March', 'February', 'January']);
+    await phone.filterRecent({ month: 'February' });
     expect(await phone.title()).toBe('Entries');
     expect((await phone.recentEntries()).map((e) => e.category)).toEqual(['гориво', 'храна']);
     expect(await phone.recentSummary()).toEqual({ count: 2, total: 220 });
@@ -55,10 +55,10 @@ test.describe('browsing', () => {
     await phone.goTo('recent');
     await expect(phone.screen().getByRole('button', { name: 'Newer month' })).toBeDisabled();
     await phone.olderMonth();
-    expect(await phone.recentSelectedMonth()).toBe('March 2026');
+    expect(await phone.recentSelectedMonth()).toBe('March');
     await phone.olderMonth();
     await phone.olderMonth();
-    expect(await phone.recentSelectedMonth()).toBe('January 2026');
+    expect(await phone.recentSelectedMonth()).toBe('January');
     await expect(phone.screen().getByRole('button', { name: 'Older month' })).toBeDisabled();
     await phone.newerMonth();
     await phone.newerMonth();
@@ -68,7 +68,7 @@ test.describe('browsing', () => {
 
   test('one category at a time; the list offers only categories that were used, in sheet order', async ({ phone }) => {
     await phone.goTo('recent');
-    expect(await phone.recentCategoryChoices()).toEqual(['All categories', 'храна', 'битови', 'ток', 'вода', 'гориво']);
+    expect(await phone.recentCategoryChoices()).toEqual(['All', 'храна', 'битови', 'ток', 'вода', 'гориво']);
     await phone.filterRecent({ category: 'храна' });
     expect((await phone.recentEntries()).map((e) => e.amount)).toEqual([9, 125]);
     expect(await phone.recentSummary()).toEqual({ count: 2, total: 134 });
@@ -76,9 +76,9 @@ test.describe('browsing', () => {
 
   test('month and category together, and a selection with nothing in it', async ({ phone }) => {
     await phone.goTo('recent');
-    await phone.filterRecent({ month: 'March 2026', category: 'храна' });
+    await phone.filterRecent({ month: 'March', category: 'храна' });
     expect(await phone.recentSummary()).toEqual({ count: 1, total: 9 });
-    await phone.filterRecent({ month: 'January 2026' });
+    await phone.filterRecent({ month: 'January' });
     await expect(phone.screen()).toContainText('No entries for this selection.');
   });
 });
@@ -94,7 +94,7 @@ test('Latest shows the 80 newest, and offers older ones by month', async ({ phon
   await phone.goTo('recent');
   expect(await phone.recentEntries()).toHaveLength(80);
   await phone.screen().getByRole('button', { name: 'Older entries: pick a month' }).click();
-  expect(await phone.recentSelectedMonth()).toBe('March 2026');
+  expect(await phone.recentSelectedMonth()).toBe('March');
   expect(await phone.recentEntries()).toHaveLength(85);
 });
 
@@ -103,7 +103,7 @@ test('last year’s sheet can be browsed through December', async ({ newPhone, g
   createBudget(google, 'budget 2025 (new format)', { expenses: [{ date: '2025-12-30', amount: 60, category: 'храна' }] });
   const phone = await newPhone({ sheet: 'budget 2025 (new format)' });
   await phone.goTo('recent');
-  expect((await phone.recentMonthChoices()).slice(0, 3)).toEqual(['Latest', 'December 2025', 'November 2025']);
+  expect((await phone.recentMonthChoices()).slice(0, 3)).toEqual(['Latest', 'December', 'November']);
   expect(await phone.recentDays()).toEqual([{ day: 'December 30 2025', total: 60 }]);
 });
 
