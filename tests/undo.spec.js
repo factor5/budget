@@ -14,7 +14,7 @@ test.describe('undoing a saved entry', () => {
     expect(await phone.undo()).toBe('Undone: 12.50 € · храна');
     expect(budget.expenses().map((e) => e.category)).toEqual(['ток']);
     expect(await phone.form()).toEqual({ kind: 'Expense', amount: '12.5€', category: 'храна', note: 'хляб', oneOff: true });
-    await expect(phone.saveButton()).toHaveText('Save 12.5 € · храна');
+    await expect(phone.saveButton()).toHaveText('Save 12.5 € · храна · today');
   });
 
   test('the corrected entry can be saved straight away', async ({ phone, budget }) => {
@@ -77,14 +77,16 @@ test.describe('finding the row', () => {
 
   test('with two identical entries, only one goes', async ({ phone, budget }) => {
     await phone.addExpense({ amount: 3.5, category: 'храна' });
-    await phone.addExpense({ amount: 3.5, category: 'храна' });
+    await phone.fillEntry({ kind: 'Expense', amount: 3.5, choice: 'храна' });
+    await phone.saveDuplicate('again'); // the same entry twice: Save asks first
     await phone.undo();
     expect(budget.expenses()).toHaveLength(1);
   });
 
   test('a double tap on Undo deletes only one row', async ({ phone, budget }) => {
     await phone.addExpense({ amount: 3.5, category: 'храна' });
-    await phone.addExpense({ amount: 3.5, category: 'храна' });
+    await phone.fillEntry({ kind: 'Expense', amount: 3.5, choice: 'храна' });
+    await phone.saveDuplicate('again'); // the same entry twice: Save asks first
     await phone.undoButton().evaluate((b) => { b.click(); b.click(); });
     await expect(phone.toast()).toHaveText('Undone: 3.50 € · храна');
     expect(budget.expenses()).toHaveLength(1);

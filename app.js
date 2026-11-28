@@ -45,6 +45,7 @@
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
     search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
     x: '<path d="M18 6 6 18M6 6l12 12"/>',
+    pin: '<path d="M12 17v5M9 3h6M10 3v6l-3 4v2h10v-2l-3-4V3"/>',
   };
 
   const MONTHS = new Proxy([], { get: (_, k) => I.months()[k] });
@@ -60,7 +61,9 @@
   const showAmt = (a) => a.replace(',', dec());
   const money = (n) => fmtNum(n, 2) + ' €';
   const money0 = (n) => fmtNum(Math.round(n), 0) + ' €';
-  const todayIso = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+  const isoOf = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  const todayIso = () => isoOf(new Date());
+  const addDays = (iso, n) => { const [y, m, d] = iso.split('-').map(Number); return isoOf(new Date(y, m - 1, d + n)); };
   const dayLabel = (iso) => {
     const [y, m, d] = iso.split('-').map(Number);
     const tIso = todayIso();
@@ -71,7 +74,21 @@
     if (iso === yIso) return t('yesterday') + ', ' + base;
     return base + (y !== new Date().getFullYear() ? ' ' + y : '');
   };
-  const shortDay = (iso) => { const [, m, d] = iso.split('-').map(Number); return (iso === todayIso() ? t('today') + ', ' : '') + (I.lang === 'en' ? MONTHS_SHORT[m - 1] + ' ' + d : d + ' ' + MONTHS_SHORT[m - 1]); };
+  // The date line on New: "Today, Mar 18" / "Fri, Aug 12" (with the year when it isn't this year).
+  const dateLine = (iso) => {
+    const [y, m, d] = iso.split('-').map(Number);
+    const base = I.lang === 'en' ? MONTHS_SHORT[m - 1] + ' ' + d : d + ' ' + MONTHS_SHORT[m - 1];
+    const yr = y !== new Date().getFullYear() ? ' ' + y : '';
+    if (iso === todayIso()) return t('today') + ', ' + base + yr;
+    const wd = new Date(y, m - 1, d).toLocaleDateString(I.lang === 'en' ? 'en-US' : 'bg-BG', { weekday: 'short' }).replace('.', '');
+    return cap(wd) + ', ' + base + yr;
+  };
+  // In the Save button and messages: "today" / "Aug 12".
+  const dayShort = (iso) => {
+    if (iso === todayIso()) return t('todayLower');
+    const [, m, d] = iso.split('-').map(Number);
+    return I.lang === 'en' ? MONTHS_SHORT[m - 1] + ' ' + d : d + ' ' + MONTHS_SHORT[m - 1];
+  };
   const parseAmount = (s) => Number(String(s).replace(/\s/g, '').replace(',', '.')) || 0;
   // Desktop browsers open the calendar only from the small icon; open it on any click.
   const openPicker = (el) => {
@@ -97,6 +114,8 @@
     car: store.get(K('lastCar'), ''),
     oneOff: false,
     date: todayIso(),
+    datePicked: false, // a date other than today was chosen: it's kept after saving (see keepDate below)
+    keepCat: false,
     note: '',
     lists: store.get(K('cache.lists'), null),
     entries: store.get(K('cache.entries'), []),
@@ -333,7 +352,52 @@
     return { pick, more: all.length > pick.length };
   }
 
-  function setMode(m) { S.mode = m; S.cat = null; S.oneOff = false; renderSubtitle(); renderMain(); }
+  function setMode(m) { S.mode = m; S.cat = null; S.keepCat = false; S.oneOff = false; renderSubtitle(); renderMain(); }
+
+  /* ----- Catching up: the date stays, within the sheet's year ----- */
+  // A chosen date is kept after saving until the New screen hasn't been used for 10 minutes,
+  // or the app is opened fresh. Spec: docs/specs/catch-up-entry.md.
+  const KEEP_DATE_MS = 10 * 60 * 1000;
+  let lastUse = Date.now();
+  const touch = () => { lastUse = Date.now(); };
+  function sheetYear() { return (S.entries[0] && Number(S.entries[0].date.slice(0, 4))) || new Date().getFullYear(); }
+  function dateLimits() {
+    const y = sheetYear(), today = todayIso(), end = y + '-12-31';
+    const max = today < end ? today : end;
+    const min = y + '-01-01' <= max ? y + '-01-01' : max;
+    return { min, max };
+  }
+  const clampDate = (iso) => { const { min, max } = dateLimits(); return iso < min ? min : iso > max ? max : iso; };
+  function setDate(iso) {
+    S.date = clampDate(iso || todayIso()); S.datePicked = S.date !== todayIso(); touch();
+    renderMain();
+  }
+  function checkKeptDate() {
+    const today = todayIso();
+    if (S.datePicked && Date.now() - lastUse >= KEEP_DATE_MS) {
+      S.date = today; S.datePicked = false; S.keepCat = false;
+      if (S.view === 'add') renderMain();
+      toast(t('dateBack'), 3500); // replaces an Undo left over from 10 minutes ago (timers sleep with the screen)
+      return;
+    }
+    if (S.keepCat && Date.now() - lastUse >= KEEP_DATE_MS) { S.keepCat = false; if (S.view === 'add') renderMain(); }
+    if (!S.datePicked && S.date !== today) { S.date = today; if (S.view === 'add') renderMain(); } // past midnight
+  }
+  setInterval(checkKeptDate, 5000);
+
+  function findDuplicate(date, amount, cat) {
+    const same = (e) => e.date === date && Math.abs(e.amount - amount) < 0.005 && e.cat === cat;
+    return S.entries.some(same) || S.queue.some((q) => q.kind === 'expense' && same(q.entry));
+  }
+  function askDuplicate(amount) {
+    openSheet([
+      h('div', { class: 'grab' }),
+      h('h2', { text: t('dupTitle') }),
+      h('p', { class: 'small', style: 'margin:0' }, t('dupText', { label: money(amount) + ' · ' + S.cat, day: dayShort(S.date) })),
+      h('button', { type: 'button', class: 'btn', onclick: () => { closeSheet(); save(true); } }, t('saveAgain')),
+      h('button', { type: 'button', class: 'btn secondary', onclick: closeSheet }, t('cancel')),
+    ]);
+  }
 
   function pressKey(k) {
     let a = S.amount === '0' ? '' : S.amount;
@@ -346,7 +410,7 @@
   }
   function saveLabel() {
     if (!S.cat) return t('chooseCategory');
-    return t('saveBtn', { amount: showAmt(S.amount), cat: S.cat });
+    return t('saveBtn', { amount: showAmt(S.amount), cat: S.cat, day: dayShort(S.date) });
   }
   function updateSaveBtn() {
     const b = $('#save'); if (!b) return;
@@ -354,9 +418,12 @@
     b.disabled = !S.cat || parseAmount(S.amount) <= 0 || S.busy;
   }
 
-  async function save() {
+  // force: true after "Save again" on the duplicate question (a tap event otherwise).
+  async function save(force) {
     const amount = parseAmount(S.amount);
     if (!S.cat || amount <= 0) return;
+    touch();
+    if (S.mode === 'expense' && force !== true && findDuplicate(S.date, amount, S.cat)) { askDuplicate(amount); return; }
     if (!demo) await ensureSignedIn();
     const entry = { date: S.date, amount, cat: S.cat, note: (S.note || '').trim() };
     if (S.mode === 'expense') {
@@ -364,10 +431,12 @@
       entry.oneOff = S.oneOff;
       if (entry.car) store.set(K('lastCar'), entry.car);
     }
-    const label = money(amount) + ' · ' + S.cat;
+    const label = money(amount) + ' · ' + S.cat + (entry.date !== todayIso() ? ' · ' + dayShort(entry.date) : '');
     const op = { id: uid(), kind: S.mode, entry };
     S.queue.push(op); saveQueue();
-    S.amount = '0'; S.note = ''; S.oneOff = false; S.date = todayIso(); S.cat = null;
+    S.amount = '0'; S.note = ''; S.oneOff = false;
+    if (!S.datePicked) S.date = todayIso();
+    if (!S.keepCat) S.cat = null;
     S.busy = true; renderMain(); renderSubtitle();
     await flush();
     S.busy = false; updateSaveBtn();
@@ -409,7 +478,8 @@
     S.monthData = {};
     if (formEmpty()) {
       const e = op.entry;
-      S.mode = op.kind; S.amount = String(e.amount).replace('.', ','); S.cat = e.cat; S.date = e.date; S.note = e.note || '';
+      S.mode = op.kind; S.amount = String(e.amount).replace('.', ','); S.cat = e.cat; S.note = e.note || '';
+      S.date = e.date; S.datePicked = e.date !== todayIso(); touch();
       S.oneOff = !!e.oneOff; if (e.car) S.car = e.car;
     }
     toast(t('undone', { label }));
@@ -444,23 +514,34 @@
       kids.push(h('div', { class: 'seg', role: 'group', 'aria-label': t('entryKind') }, segBtn('expense', t('expense')), segBtn('income', t('income')), segBtn('invest', t('invest'))));
     }
     kids.push(h('section', { class: 'amount', 'aria-label': t('amount') }, h('span', { id: 'amount-num', class: 'num' }, showAmt(S.amount)), h('span', { class: 'cur' }, '€')));
+
+    // The date, right under the amount: ‹ date ›. Amber when it isn't today.
+    S.date = clampDate(S.date);
+    const lim = dateLimits();
+    const dateInput = h('input', { type: 'date', value: S.date, min: lim.min, max: lim.max, tabindex: '-1', 'aria-hidden': 'true', onchange: (e) => setDate(e.target.value) });
+    const dateBtn = h('div', { class: 'date-pick', role: 'button', tabindex: '0', 'aria-label': t('date') + ': ' + dateLine(S.date),
+      onclick: () => openPicker(dateInput),
+      onkeydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); openPicker(dateInput); } } },
+      svg(ICON.cal), h('span', null, dateLine(S.date)), dateInput);
+    kids.push(h('section', { class: 'dateline' + (S.date !== todayIso() ? ' past' : ''), 'aria-label': t('date') },
+      h('button', { type: 'button', class: 'day-step', 'aria-label': t('prevDay'), disabled: S.date <= lim.min, onclick: () => setDate(addDays(S.date, -1)) }, svg(ICON.left)),
+      dateBtn,
+      h('button', { type: 'button', class: 'day-step', 'aria-label': t('nextDay'), disabled: S.date >= lim.max, onclick: () => setDate(addDays(S.date, 1)) }, svg(ICON.right))));
+
     kids.push(h('section', { class: 'block', 'aria-label': t('category') },
-      h('span', { class: 'label', text: t(S.mode === 'expense' ? 'category' : S.mode === 'income' ? 'source' : 'type') }),
+      h('div', { class: 'block-head' },
+        h('span', { class: 'label', text: t(S.mode === 'expense' ? 'category' : S.mode === 'income' ? 'source' : 'type') }),
+        S.cat ? h('button', { type: 'button', class: 'keep', 'aria-pressed': String(S.keepCat), 'aria-label': t('keepCat'), title: t('keepCat'),
+          onclick: () => { S.keepCat = !S.keepCat; renderMain(); } }, svg(ICON.pin), t('keep')) : null),
       h('div', { class: 'chips' },
         pick.map((c) => h('button', { type: 'button', class: 'chip', 'aria-pressed': String(S.cat === c), title: c, onclick: () => { S.cat = c; renderMain(); } }, c)),
         more ? h('button', { type: 'button', class: 'chip more', onclick: openCategorySheet }, t('more')) : null)));
 
     const details = h('section', { class: 'block', style: 'padding-top:12px', 'aria-label': t('details') });
-    const dateInput = h('input', { type: 'date', value: S.date, max: todayIso(), tabindex: '-1', 'aria-hidden': 'true', onchange: (e) => { S.date = e.target.value || todayIso(); renderMain(); } });
-    const datePill = h('div', { class: 'pill', role: 'button', tabindex: '0', 'aria-label': t('date') + ': ' + shortDay(S.date),
-      onclick: () => openPicker(dateInput),
-      onkeydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); openPicker(dateInput); } } },
-      svg(ICON.cal), shortDay(S.date), dateInput);
-    const row = h('div', { class: 'row' }, datePill);
     if (S.mode === 'expense') {
-      row.append(h('button', { type: 'button', class: 'pill oneoff', 'aria-pressed': String(S.oneOff), onclick: () => { S.oneOff = !S.oneOff; renderMain(); } }, svg(ICON.spark), t('oneOff')));
+      details.append(h('div', { class: 'row' },
+        h('button', { type: 'button', class: 'pill oneoff', 'aria-pressed': String(S.oneOff), onclick: () => { S.oneOff = !S.oneOff; renderMain(); } }, svg(ICON.spark), t('oneOff'))));
     }
-    details.append(row);
     if (S.mode === 'expense' && S.cat && isCarCat(S.cat) && S.lists.cars.length) {
       details.append(h('div', { class: 'row' }, h('span', { class: 'small muted', style: 'width:44px' }, t('car')),
         S.lists.cars.map((c) => h('button', { type: 'button', class: 'carpill', 'aria-pressed': String(S.car === c), onclick: () => { S.car = S.car === c ? '' : c; renderMain(); } }, c))));
@@ -553,7 +634,7 @@
       .concat(S.entries.slice().sort((a, b) => (b.date === a.date ? b.row - a.row : b.date < a.date ? -1 : 1)));
   }
   function recentYear() {
-    const year = (S.entries[0] && Number(S.entries[0].date.slice(0, 4))) || new Date().getFullYear();
+    const year = sheetYear();
     return { year, lastMonth: year < new Date().getFullYear() ? 12 : new Date().getMonth() + 1 };
   }
   // The list under the filters. Redrawn on its own while typing, so the search box keeps focus.
@@ -790,7 +871,9 @@
   window.addEventListener('online', () => { renderSync(); flush(); S.monthError = null; if (S.view === 'month') renderMain(); });
   window.addEventListener('offline', renderSync);
   window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); S.installEvent = e; if (S.view === 'settings') renderMain(); });
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) { renderSync(); refresh({ quiet: true }); } });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { checkKeptDate(); renderSync(); refresh({ quiet: true }); } });
+  // Using the New screen keeps a chosen date (checked before the tap is handled).
+  ['pointerdown', 'keydown'].forEach((ev) => document.addEventListener(ev, () => { if (S.view === 'add') { checkKeptDate(); touch(); } }, true));
   /* ---------- tap feedback (a short vibration on every button) ---------- */
   // Android: the Vibration API. iPhone (iOS 18+) has no Vibration API, but Safari gives a light
   // tick when a switch-style checkbox is toggled, so a hidden one is clicked instead.

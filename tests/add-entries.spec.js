@@ -49,10 +49,10 @@ test.describe('expenses', () => {
     await phone.goTo('new');
     await expect(phone.saveButton()).toBeDisabled();
     await phone.chooseCategory('храна');
-    await expect(phone.saveButton()).toHaveText('Save 0 € · храна');
+    await expect(phone.saveButton()).toHaveText('Save 0 € · храна · today');
     await expect(phone.saveButton()).toBeDisabled();
     await phone.typeAmount('9.9');
-    await expect(phone.saveButton()).toHaveText('Save 9.9 € · храна');
+    await expect(phone.saveButton()).toHaveText('Save 9.9 € · храна · today');
     await expect(phone.saveButton()).toBeEnabled();
   });
 

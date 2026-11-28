@@ -92,6 +92,7 @@ On 1 January: **Настройки → Нова година от шаблона
 ## Good to know
 
 - **Signing in again.** Google's sign-in lasts an hour. After that, the next save opens a short Google window that closes by itself. If the "Влез" button shows at the top right, tap it.
+- **Entering old expenses.** Under the amount, tap the date (or ‹ ›) to pick the day. It turns amber and stays for the next entries until you leave the Нов screen alone for 10 minutes. **Задръж** next to Категория keeps the category too, so you only type amounts. If the same amount and category is already on that day, the app asks before saving it again.
 - **Offline.** Entries saved without internet show as waiting (top right and on **Последни**). They are sent automatically when the phone is back online, or when you tap the waiting badge.
 - **Sign-in stops working after 7 days?** Apps in Google's "Testing" mode can ask you to sign in again weekly. To avoid it: **OAuth consent screen → Publish app**. Because the app only asks for access to files you pick, Google doesn't require a review.
 - **Language.** **Настройки → Език** switches the app between Bulgarian and English. Category names stay as they are in the sheet.

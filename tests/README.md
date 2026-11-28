@@ -27,6 +27,7 @@ to step through what the browser showed.
 | `recent.spec.js` | the Recent list, month and category filters, editing and deleting |
 | `search.spec.js` | search on Recent: note and car, several words, with the month and category filters, keyboard and focus, drawing 200 at a time |
 | `month.spec.js` | the Month statement and spending by group |
+| `catch-up.spec.js` | catching up on old expenses: the kept date and when it goes back to today, the date line and its limits, Keep, the duplicate question |
 | `undo.spec.js` | Undo after saving: each entry kind, waiting entries, finding the row, failures, sign-in, the message |
 | `offline.spec.js` | saving without internet, the waiting queue, sending later |
 | `multiple-phones.spec.js` | two phones on one sheet: no overwrites, edits land on the right row |

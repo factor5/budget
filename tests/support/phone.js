@@ -142,10 +142,12 @@ class Phone {
   }
 
   categoryButtons() { return this.screen().getByRole('region', { name: 'Category' }); }
+  /** The category buttons themselves, without the Keep toggle beside the label. */
+  categoryChips() { return this.categoryButtons().getByRole('button').and(this.page.locator(':not([aria-label="Keep the category after saving"])')); }
 
   /** The category (or source / type) buttons shown without opening "More…". */
   async quickCategories() {
-    return (await this.categoryButtons().getByRole('button').allTextContents()).map((s) => s.trim()).filter((s) => s !== 'More…');
+    return (await this.categoryChips().allTextContents()).map((s) => s.trim()).filter((s) => s !== 'More…');
   }
 
   /** The "More…" list, grouped as shown: { 'Food': ['храна'], ... } */
@@ -198,6 +200,38 @@ class Phone {
     return (await this.toast().textContent()).startsWith('Saved') ? 'saved' : 'kept';
   }
 
+  /* ---------- Catching up: the date line, Keep, duplicates ---------- */
+
+  dateRegion() { return this.screen().getByRole('region', { name: /^(Date|Дата)$/ }); }
+  /** The date line under the amount: { text: 'Today, Mar 18', notToday: false, value: '2026-03-18' } */
+  async dateShown() {
+    const r = this.dateRegion();
+    return {
+      text: (await r.getByRole('button', { name: /^Date: / }).textContent()).trim(),
+      notToday: await r.evaluate((el) => el.classList.contains('past')),
+      value: await r.locator('input[type="date"]').inputValue(),
+    };
+  }
+  async pickDate(iso) { await this.goTo('new'); await this.dateRegion().locator('input[type="date"]').fill(iso); }
+  previousDayButton() { return this.dateRegion().getByRole('button', { name: 'Previous day' }); }
+  nextDayButton() { return this.dateRegion().getByRole('button', { name: 'Next day' }); }
+
+  keepButton() { return this.categoryButtons().getByRole('button', { name: 'Keep the category after saving' }); }
+  async setKeep(on) { await this.setPressed(this.keepButton(), on); }
+
+  /** The "Already entered?" question shown by Save for a likely duplicate. */
+  duplicateQuestion() { return this.page.getByRole('dialog').filter({ hasText: 'Already entered?' }); }
+
+  /** Taps Save on the form as it is, then answers the duplicate question: 'again' or 'cancel'. */
+  async saveDuplicate(answer) {
+    await this.dismissToast();
+    await this.saveButton().click();
+    await expect(this.duplicateQuestion()).toBeVisible();
+    await this.duplicateQuestion().getByRole('button', { name: answer === 'again' ? 'Save again' : 'Cancel' }).click();
+    if (answer === 'again') await expect(this.toast()).toHaveText(/^(Saved: |Kept on the phone: )/);
+    else await expect(this.duplicateQuestion()).toBeHidden();
+  }
+
   /* ---------- Undo after saving ---------- */
 
   /** The Undo button on the message shown after saving. */
@@ -218,7 +252,7 @@ class Phone {
     return {
       kind: (await kinds.count()) ? await pressed(kinds.getByRole('button')) : null,
       amount: await this.shownAmount(),
-      category: await pressed(this.categoryButtons().getByRole('button')),
+      category: await pressed(this.categoryChips()),
       note: await this.screen().getByRole('textbox', { name: 'Note' }).inputValue(),
       oneOff: (await oneOff.count()) ? (await oneOff.getAttribute('aria-pressed')) === 'true' : null,
     };
