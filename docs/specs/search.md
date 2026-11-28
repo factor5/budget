@@ -26,7 +26,8 @@ On **Последни**, the filters are:
 
 1. **A search box**, full width, on top. Placeholder **Търси в бележки и коли** (EN **Search notes and cars**),
    a magnifier on the left and a **✕** on the right once there's text. Enter closes the keyboard.
-2. **One row below it:** the month control (arrows and dropdown) takes 60%, the category dropdown 40%.
+2. **One row below it:** the month and category dropdowns, half each. The month arrows are gone: they were
+   hardly used, and the dropdown reaches any month in one tap.
    On a very narrow screen the row wraps into two lines.
 
 To fit the row:
