@@ -37,7 +37,7 @@
       keypad: 'Клавиатура', delDigit: 'Изтрий цифра', decimal: 'Запетая',
       // recent
       pending1: '{n} запис чака изпращане', pendingN: '{n} записа чакат изпращане', pendingHint: 'Изпращат се сами, щом има връзка.', send: 'Изпрати',
-      month: 'Месец', latest: 'Последни', olderMonth: 'По-стар месец', newerMonth: 'По-нов месец',
+      month: 'Месец', latest: 'Последни',
       noMatch: 'Няма записи за този избор.', noEntries: 'Още няма записи.', count1: '{n} запис', countN: '{n} записа',
       oneOffLower: 'еднократен', waitingConn: 'чака връзка', noNote: 'Без бележка',
       olderPick: 'По-стари записи: изберете месец',
@@ -105,7 +105,7 @@
       details: 'Details', date: 'Date', oneOff: 'One-off', car: 'Car', note: 'Note', notePh: 'Note (optional)',
       keypad: 'Keypad', delDigit: 'Delete digit', decimal: 'Decimal point',
       pending1: '{n} entry waiting to be sent', pendingN: '{n} entries waiting to be sent', pendingHint: "They're sent automatically when you're online.", send: 'Send',
-      month: 'Month', latest: 'Latest', olderMonth: 'Older month', newerMonth: 'Newer month',
+      month: 'Month', latest: 'Latest',
       noMatch: 'No entries for this selection.', noEntries: 'No entries yet.', count1: '{n} entry', countN: '{n} entries',
       oneOffLower: 'one-off', waitingConn: 'waiting for connection', noNote: 'No note',
       olderPick: 'Older entries: pick a month',

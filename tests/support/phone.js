@@ -268,8 +268,6 @@ class Phone {
   async clearSearch() { await this.screen().getByRole('button', { name: /Clear search|Изчисти търсенето/ }).click(); }
   /** The bold parts of each entry's details line, in list order: [['гуми'], []] */
   async recentHighlights() { return Promise.all((await this.screen().getByRole('listitem').all()).map((li) => li.locator('mark').allTextContents())); }
-  async olderMonth() { await this.screen().getByRole('button', { name: 'Older month' }).click(); }
-  async newerMonth() { await this.screen().getByRole('button', { name: 'Newer month' }).click(); }
 
   /** "3 entries · 45.00 €" shown when a filter is on. */
   async recentSummary() {

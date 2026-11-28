@@ -541,10 +541,7 @@
     wrap.append(h('div', { class: 'filters' },
       h('div', { class: 'search' }, svg(ICON.search), box, clearBtn),
       h('div', { class: 'filter-row' },
-        h('div', { class: 'month-nav' },
-          h('button', { type: 'button', class: 'icon-btn', 'aria-label': t('olderMonth'), disabled: rm === 1 || null, onclick: () => setMonth(rm === 0 ? lastMonth : rm - 1) }, svg(ICON.left)),
-          monthSel,
-          h('button', { type: 'button', class: 'icon-btn', 'aria-label': t('newerMonth'), disabled: rm === 0 || null, onclick: () => setMonth(rm >= lastMonth ? 0 : rm + 1) }, svg(ICON.right))),
+        monthSel,
         catSel)));
     fillRecentList(results, all, year, lastMonth);
     wrap.append(results, h('p', { class: 'tiny muted', style: 'margin:2px 4px 0' }, t('recentHint')));

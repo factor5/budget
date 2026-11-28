@@ -51,21 +51,6 @@ test.describe('browsing', () => {
     expect(await phone.recentSummary()).toEqual({ count: 2, total: 220 });
   });
 
-  test('the arrows step through the months', async ({ phone }) => {
-    await phone.goTo('recent');
-    await expect(phone.screen().getByRole('button', { name: 'Newer month' })).toBeDisabled();
-    await phone.olderMonth();
-    expect(await phone.recentSelectedMonth()).toBe('March');
-    await phone.olderMonth();
-    await phone.olderMonth();
-    expect(await phone.recentSelectedMonth()).toBe('January');
-    await expect(phone.screen().getByRole('button', { name: 'Older month' })).toBeDisabled();
-    await phone.newerMonth();
-    await phone.newerMonth();
-    await phone.newerMonth();
-    expect(await phone.recentSelectedMonth()).toBe('Latest');
-  });
-
   test('one category at a time; the list offers only categories that were used, in sheet order', async ({ phone }) => {
     await phone.goTo('recent');
     expect(await phone.recentCategoryChoices()).toEqual(['All', 'храна', 'битови', 'ток', 'вода', 'гориво']);
