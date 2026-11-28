@@ -25,6 +25,7 @@ to step through what the browser showed.
 | `setup.spec.js` | first run, connecting the sheet, wrong sheet, cancelled sign-in |
 | `add-entries.spec.js` | expenses, cars, one-off, dates, income, deposits, keypad, quick categories |
 | `recent.spec.js` | the Recent list, month and category filters, editing and deleting |
+| `search.spec.js` | search on Recent: note and car, several words, with the month and category filters, keyboard and focus, drawing 200 at a time |
 | `month.spec.js` | the Month statement and spending by group |
 | `undo.spec.js` | Undo after saving: each entry kind, waiting entries, finding the row, failures, sign-in, the message |
 | `offline.spec.js` | saving without internet, the waiting queue, sending later |

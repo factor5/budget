@@ -43,6 +43,8 @@
     right: '<path d="M9 18l6-6-6-6"/>',
     lock: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
+    x: '<path d="M18 6 6 18M6 6l12 12"/>',
   };
 
   const MONTHS = new Proxy([], { get: (_, k) => I.months()[k] });
@@ -228,7 +230,7 @@
   }
   function renderSubtitle() {
     const m = new Date().getMonth() + 1;
-    const titles = { add: t(S.mode === 'income' ? 'titleIncome' : S.mode === 'invest' ? 'titleInvest' : 'titleExpense'), recent: t((S.recentMonth || S.recentCat) ? 'titleEntries' : 'titleRecent'), month: '', settings: t('titleSettings') };
+    const titles = { add: t(S.mode === 'income' ? 'titleIncome' : S.mode === 'invest' ? 'titleInvest' : 'titleExpense'), recent: t((S.recentMonth || S.recentCat || searchWords().length) ? 'titleEntries' : 'titleRecent'), month: '', settings: t('titleSettings') };
     $('#title').textContent = S.view === 'month' ? cap(MONTHS[S.month - 1]) + ' ' + new Date().getFullYear() : titles[S.view];
     const sub = $('#subtitle');
     if ((S.view === 'add' || S.view === 'recent') && backend.hasSheet) sub.textContent = t('soFar', { month: cap(MONTHS[m - 1]), sum: money0(monthSpent(m)) });
@@ -269,7 +271,10 @@
     const main = $('#main');
     if (!demo && (!backend.configured || !backend.hasSheet) && S.view !== 'settings') { main.replaceChildren(onboarding()); return; }
     const v = { add: viewAdd, recent: viewRecent, month: viewMonth, settings: viewSettings }[S.view];
+    const typing = document.activeElement && document.activeElement.id === 'recent-search' ? document.activeElement : null;
+    const caret = typing ? [typing.selectionStart, typing.selectionEnd] : null;
     main.replaceChildren(v());
+    if (typing) { const box = $('#recent-search'); if (box) { box.focus(); try { box.setSelectionRange(caret[0], caret[1]); } catch (_) {} } }
     placeToast();
   }
 
@@ -475,63 +480,131 @@
   }
 
   /* ----- Последни ----- */
+  // Search: words typed in the box, all of which must appear in the note or the car (any order, any case).
+  function searchWords() { return (S.recentQuery || '').toLocaleLowerCase().split(/\s+/).filter(Boolean); }
+  // Lower-cased note and car per entry, worked out once rather than on every key press.
+  const hayOf = new WeakMap();
+  function matchesSearch(e, words) {
+    let hay = hayOf.get(e);
+    if (hay == null) { hay = (e.note || '').toLocaleLowerCase() + '\n' + (e.car || '').toLocaleLowerCase(); hayOf.set(e, hay); }
+    return words.every((w) => hay.includes(w));
+  }
+  // A long result list is drawn 200 at a time: drawing thousands of rows takes too long on a phone.
+  const PAGE = 200;
+  // Text with every match of the search words in bold.
+  function marked(text, words) {
+    const low = text.toLocaleLowerCase();
+    if (!words.length || low.length !== text.length) return [text];
+    const hit = new Array(text.length).fill(false);
+    words.forEach((w) => { for (let i = low.indexOf(w); i >= 0; i = low.indexOf(w, i + 1)) hit.fill(true, i, i + w.length); });
+    const out = []; let i = 0;
+    while (i < text.length) { let j = i; while (j < text.length && hit[j] === hit[i]) j++; out.push(hit[i] ? h('mark', null, text.slice(i, j)) : text.slice(i, j)); i = j; }
+    return out;
+  }
   function viewRecent() {
+    if (!S.recentShown) S.recentShown = PAGE;
     const wrap = h('div', { class: 'scroll' });
-    const pending = S.queue.filter((q) => q.kind === 'expense');
     if (S.queue.length) {
       wrap.append(h('div', { class: 'notice' }, svg(ICON.wifiOff, 20),
         h('div', null, h('div', { class: 't' }, t(S.queue.length === 1 ? 'pending1' : 'pendingN', { n: S.queue.length })),
           h('div', { class: 'd' }, t('pendingHint'))),
         navigator.onLine ? h('button', { type: 'button', class: 'btn secondary', style: 'width:auto;padding:0 12px', onclick: async () => { if (await ensureSignedIn()) flush(); } }, t('send')) : null));
     }
-    // Filters: month (0 = latest entries) and category ('' = all).
-    const all = pending.map((q) => Object.assign({ pending: true }, q.entry))
-      .concat(S.entries.slice().sort((a, b) => (b.date === a.date ? b.row - a.row : b.date < a.date ? -1 : 1)));
-    const year = (S.entries[0] && Number(S.entries[0].date.slice(0, 4))) || new Date().getFullYear();
-    const lastMonth = year < new Date().getFullYear() ? 12 : new Date().getMonth() + 1;
+    const all = recentAll();
+    const { year, lastMonth } = recentYear();
     const rm = S.recentMonth || 0, rc = S.recentCat || '';
-    const setMonth = (m) => { S.recentMonth = m; render(); };
+    const setMonth = (m) => { S.recentMonth = m; S.recentShown = PAGE; render(); };
     const monthSel = h('select', { class: 'input', 'aria-label': t('month'), onchange: (ev) => setMonth(Number(ev.target.value)) },
-      h('option', { value: '0', selected: rm === 0 ? 'selected' : null }, t('latest')),
-      Array.from({ length: lastMonth }, (_, i) => lastMonth - i).map((m) => h('option', { value: String(m), selected: rm === m ? 'selected' : null }, cap(MONTHS[m - 1]) + ' ' + year)));
+      h('option', { value: '0', selected: rm === 0 ? 'selected' : null }, t(searchWords().length ? 'wholeYear' : 'latest')),
+      Array.from({ length: lastMonth }, (_, i) => lastMonth - i).map((m) => h('option', { value: String(m), selected: rm === m ? 'selected' : null }, cap(MONTHS[m - 1]))));
     const usedCats = [...new Set(all.map((e) => e.cat).filter(Boolean))];
     const ordered = S.lists.cats.map((c) => c.name).filter((n) => usedCats.includes(n)).concat(usedCats.filter((n) => !S.lists.cats.some((c) => c.name === n)));
-    const catSel = h('select', { class: 'input', 'aria-label': t('category'), onchange: (ev) => { S.recentCat = ev.target.value; render(); } },
-      h('option', { value: '', selected: rc === '' ? 'selected' : null }, t('allCategories')),
+    const catSel = h('select', { class: 'input', 'aria-label': t('category'), onchange: (ev) => { S.recentCat = ev.target.value; S.recentShown = PAGE; render(); } },
+      h('option', { value: '', selected: rc === '' ? 'selected' : null }, t('allShort')),
       ordered.map((n) => h('option', { value: n, selected: rc === n ? 'selected' : null }, n)));
+    const results = h('div', { class: 'results' });
+    const clearBtn = h('button', { type: 'button', class: 'search-clear', 'aria-label': t('clearSearch'), hidden: !S.recentQuery || null }, svg(ICON.x));
+    const box = h('input', { id: 'recent-search', class: 'input', type: 'search', enterkeyhint: 'search', autocomplete: 'off', spellcheck: 'false',
+      placeholder: t('searchPh'), 'aria-label': t('searchPh'), value: S.recentQuery || '' });
+    const onQuery = () => {
+      S.recentQuery = box.value; S.recentShown = PAGE;
+      clearBtn.hidden = !box.value;
+      monthSel.options[0].text = t(searchWords().length ? 'wholeYear' : 'latest');
+      renderSubtitle();
+      fillRecentList(results, all, year, lastMonth);
+    };
+    box.addEventListener('input', onQuery);
+    box.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); box.blur(); } });
+    clearBtn.addEventListener('click', () => { box.value = ''; onQuery(); box.focus(); });
+    // A finger scrolling the list puts the keyboard away.
+    results.addEventListener('touchmove', () => { if (document.activeElement === box) box.blur(); }, { passive: true });
     wrap.append(h('div', { class: 'filters' },
-      h('div', { class: 'month-nav' },
-        h('button', { type: 'button', class: 'icon-btn', 'aria-label': t('olderMonth'), disabled: rm === 1 || null, onclick: () => setMonth(rm === 0 ? lastMonth : rm - 1) }, svg(ICON.left)),
-        monthSel,
-        h('button', { type: 'button', class: 'icon-btn', 'aria-label': t('newerMonth'), disabled: rm === 0 || null, onclick: () => setMonth(rm >= lastMonth ? 0 : rm + 1) }, svg(ICON.right))),
-      catSel));
+      h('div', { class: 'search' }, svg(ICON.search), box, clearBtn),
+      h('div', { class: 'filter-row' },
+        h('div', { class: 'month-nav' },
+          h('button', { type: 'button', class: 'icon-btn', 'aria-label': t('olderMonth'), disabled: rm === 1 || null, onclick: () => setMonth(rm === 0 ? lastMonth : rm - 1) }, svg(ICON.left)),
+          monthSel,
+          h('button', { type: 'button', class: 'icon-btn', 'aria-label': t('newerMonth'), disabled: rm === 0 || null, onclick: () => setMonth(rm >= lastMonth ? 0 : rm + 1) }, svg(ICON.right))),
+        catSel)));
+    fillRecentList(results, all, year, lastMonth);
+    wrap.append(results, h('p', { class: 'tiny muted', style: 'margin:2px 4px 0' }, t('recentHint')));
+    return wrap;
+  }
+  // Waiting entries first, then the sheet's, newest first.
+  function recentAll() {
+    return S.queue.filter((q) => q.kind === 'expense').map((q) => Object.assign({ pending: true }, q.entry))
+      .concat(S.entries.slice().sort((a, b) => (b.date === a.date ? b.row - a.row : b.date < a.date ? -1 : 1)));
+  }
+  function recentYear() {
+    const year = (S.entries[0] && Number(S.entries[0].date.slice(0, 4))) || new Date().getFullYear();
+    return { year, lastMonth: year < new Date().getFullYear() ? 12 : new Date().getMonth() + 1 };
+  }
+  // The list under the filters. Redrawn on its own while typing, so the search box keeps focus.
+  function fillRecentList(box, all, year, lastMonth) {
+    const rm = S.recentMonth || 0, rc = S.recentCat || '';
+    const words = searchWords();
     const pref = rm ? year + '-' + String(rm).padStart(2, '0') : '';
-    let items = all.filter((e) => (!pref || e.date.startsWith(pref)) && (!rc || e.cat === rc));
-    const limited = !rm && !rc && items.length > 80;
+    let items = all.filter((e) => (!pref || e.date.startsWith(pref)) && (!rc || e.cat === rc) && (!words.length || matchesSearch(e, words)));
+    const limited = !rm && !rc && !words.length && items.length > 80;
     if (limited) items = items.slice(0, 80);
-    if (!items.length) { wrap.append(h('div', { class: 'empty' }, all.length ? t('noMatch') : t('noEntries'))); return wrap; }
-    if (rm || rc) {
-      const sum = items.reduce((s, e) => s + e.amount, 0);
-      wrap.append(h('div', { class: 'summary' }, h('span', null, t(items.length === 1 ? 'count1' : 'countN', { n: items.length })), h('b', null, money(sum))));
+    if (!items.length) {
+      if (!words.length) { box.replaceChildren(h('div', { class: 'empty' }, all.length ? t('noMatch') : t('noEntries'))); return; }
+      box.replaceChildren(h('div', { class: 'empty' }, h('p', { style: 'margin:0' }, t('noSearchMatch', { q: S.recentQuery.trim() })),
+        rm || rc ? h('button', { type: 'button', class: 'btn secondary', style: 'margin-top:12px', onclick: () => { S.recentMonth = 0; S.recentCat = ''; S.recentShown = PAGE; render(); } }, t('searchWholeYear')) : null));
+      return;
     }
+    const out = [];
+    if (rm || rc || words.length) {
+      const sum = items.reduce((s, e) => s + e.amount, 0);
+      out.push(h('div', { class: 'summary' }, h('span', null, t(items.length === 1 ? 'count1' : 'countN', { n: items.length })), h('b', null, money(sum))));
+    }
+    // Cut after S.recentShown entries, but finish the day so its total is right.
+    const count = items.length;
+    let cut = Math.min(count, S.recentShown);
+    while (cut < count && items[cut].date === items[cut - 1].date) cut++;
+    items = items.slice(0, cut);
     const byDay = [];
     items.forEach((e) => { const last = byDay[byDay.length - 1]; if (last && last.date === e.date) last.items.push(e); else byDay.push({ date: e.date, items: [e] }); });
+    const open = (e) => { if (document.activeElement && document.activeElement.id === 'recent-search') document.activeElement.blur(); openEdit(e); };
     byDay.forEach((d) => {
       const total = d.items.reduce((s, e) => s + e.amount, 0);
-      wrap.append(h('section', { style: 'display:flex;flex-direction:column;gap:6px' },
+      out.push(h('section', { style: 'display:flex;flex-direction:column;gap:6px' },
         h('div', { class: 'day-head' }, h('span', null, dayLabel(d.date)), h('span', null, money(total))),
         h('ul', { class: 'list' }, d.items.map((e) => {
           const g = groupOf(e.cat); const tone = TONE[g] || TONE['Други'];
-          const sub = [e.car, e.oneOff ? t('oneOffLower') : '', e.note, e.pending ? t('waitingConn') : ''].filter(Boolean).join(' · ') || t('noNote');
-          return h('li', null, h('button', { type: 'button', class: 'item', disabled: e.pending || null, onclick: e.pending ? null : () => openEdit(e) },
+          const parts = [e.car ? marked(e.car, words) : null, e.oneOff ? t('oneOffLower') : '', e.note ? marked(e.note, words) : null, e.pending ? t('waitingConn') : ''].filter((p) => p && p.length);
+          const sub = parts.length ? parts.flatMap((p, i) => (i ? [' · '].concat(p) : [].concat(p))) : [t('noNote')];
+          return h('li', null, h('button', { type: 'button', class: 'item', disabled: e.pending || null, onclick: e.pending ? null : () => open(e) },
             h('span', { class: 'badge', 'aria-hidden': 'true', style: 'background:' + tone[0] + ';color:' + tone[1] }, (e.cat || '?').charAt(0).toUpperCase()),
             h('span', { class: 'mid' }, h('span', { class: 'cat' }, e.cat), h('span', { class: 'sub' }, sub)),
             h('span', { class: 'amt' }, money(e.amount))));
         }))));
     });
-    if (limited) wrap.append(h('button', { type: 'button', class: 'btn secondary', onclick: () => setMonth(lastMonth) }, t('olderPick')));
-    wrap.append(h('p', { class: 'tiny muted', style: 'margin:2px 4px 0' }, t('recentHint')));
-    return wrap;
+    if (count > cut) {
+      out.push(h('button', { type: 'button', class: 'btn secondary', onclick: () => { S.recentShown = cut + PAGE; fillRecentList(box, all, year, lastMonth); } }, t('showMore', { n: Math.min(PAGE, count - cut), left: count - cut })));
+    }
+    if (limited) out.push(h('button', { type: 'button', class: 'btn secondary', onclick: () => { S.recentMonth = lastMonth; S.recentShown = PAGE; render(); } }, t('olderPick')));
+    box.replaceChildren(...out);
   }
 
   function openEdit(e) {

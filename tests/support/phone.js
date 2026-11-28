@@ -256,12 +256,18 @@ class Phone {
 
   async filterRecent({ month, category } = {}) {
     if (month !== undefined) await this.screen().getByRole('combobox', { name: 'Month' }).selectOption({ label: month });
-    if (category !== undefined) await this.screen().getByRole('combobox', { name: 'Category' }).selectOption({ label: category || 'All categories' });
+    if (category !== undefined) await this.screen().getByRole('combobox', { name: 'Category' }).selectOption({ label: category || 'All' });
   }
 
   async recentMonthChoices() { return (await this.screen().getByRole('combobox', { name: 'Month' }).locator('option').allTextContents()).map((s) => s.trim()); }
   async recentCategoryChoices() { return (await this.screen().getByRole('combobox', { name: 'Category' }).locator('option').allTextContents()).map((s) => s.trim()); }
   async recentSelectedMonth() { return this.screen().getByRole('combobox', { name: 'Month' }).evaluate((s) => s.options[s.selectedIndex].text); }
+  searchBox() { return this.screen().getByRole('searchbox', { name: /Search notes and cars|Търси в бележки и коли/ }); }
+  /** Types into the search box on Recent one key at a time, like a person. */
+  async search(text) { await this.goTo('recent'); await this.searchBox().pressSequentially(text); }
+  async clearSearch() { await this.screen().getByRole('button', { name: /Clear search|Изчисти търсенето/ }).click(); }
+  /** The bold parts of each entry's details line, in list order: [['гуми'], []] */
+  async recentHighlights() { return Promise.all((await this.screen().getByRole('listitem').all()).map((li) => li.locator('mark').allTextContents())); }
   async olderMonth() { await this.screen().getByRole('button', { name: 'Older month' }).click(); }
   async newerMonth() { await this.screen().getByRole('button', { name: 'Newer month' }).click(); }
 

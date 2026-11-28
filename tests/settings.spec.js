@@ -28,7 +28,7 @@ test.describe('lists from the Категории tab', () => {
     budget.addExpense({ date: '2026-03-01', amount: 10, category: 'стара категория' });
     await phone.refreshCategories();
     await phone.goTo('recent');
-    expect(await phone.recentCategoryChoices()).toEqual(['All categories', 'стара категория']);
+    expect(await phone.recentCategoryChoices()).toEqual(['All', 'стара категория']);
   });
 });
 
